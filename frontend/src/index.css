@@ -1,0 +1,134 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  background-color: #FAF9F6;
+  color: #17211D;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* iOS Safari zooms in on inputs with a font-size under 16px — keep form
+   fields at 16px on touch screens so filing a complaint doesn't jump-zoom. */
+@media (max-width: 640px) {
+  .input-field,
+  textarea.input-field,
+  select {
+    font-size: 16px;
+  }
+}
+
+::selection {
+  background-color: #DCE8E0;
+  color: #132E24;
+}
+
+/* ---------- Typography ---------- */
+
+.font-display {
+  font-family: 'Fraunces', ui-serif, Georgia, serif;
+  font-feature-settings: 'ss01' 1;
+}
+
+/* ---------- Form controls ---------- */
+
+.input-field {
+  @apply w-full px-3.5 py-2.5 bg-white border border-stone-300 rounded-md
+    text-[0.925rem] text-ink placeholder:text-ink-faint
+    focus:border-pine-500 focus:ring-1 focus:ring-pine-500 outline-none
+    transition-colors;
+}
+
+.input-field:disabled {
+  @apply bg-stone-100 text-ink-faint cursor-not-allowed;
+}
+
+.field-label {
+  @apply block text-[0.8rem] font-medium text-ink-soft mb-1.5;
+}
+
+/* ---------- Buttons ---------- */
+
+.btn-primary {
+  @apply inline-flex items-center justify-center gap-1.5 bg-pine-500 hover:bg-pine-600
+    text-white font-medium px-4 py-2.5 rounded-md transition-colors
+    disabled:opacity-50 disabled:cursor-not-allowed text-sm;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center gap-1.5 bg-white border border-stone-300
+    hover:border-ink/30 hover:bg-stone-100 text-ink-soft font-medium px-4 py-2.5
+    rounded-md transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.btn-ghost {
+  @apply inline-flex items-center justify-center gap-1.5 text-ink-soft hover:text-ink
+    hover:bg-stone-100 font-medium px-3 py-2 rounded-md transition-colors text-sm;
+}
+
+/* ---------- Surfaces ---------- */
+
+.card {
+  @apply bg-white rounded-md border border-stone-300 shadow-card;
+}
+
+.panel {
+  @apply bg-white rounded-md border border-stone-300;
+}
+
+/* ---------- Registry / ticket motifs ---------- */
+
+.ticket-no {
+  font-family: 'Fraunces', ui-serif, Georgia, serif;
+  font-variant-numeric: tabular-nums;
+  @apply text-ink-soft;
+}
+
+.divider {
+  @apply border-t border-stone-300;
+}
+
+/* ---------- Status tag (flat, left-bar style — not a rounded pill kit) ---------- */
+
+.status-tag {
+  @apply inline-flex items-center gap-1.5 pl-2.5 pr-3 py-1 rounded-sm border text-xs font-medium
+    whitespace-nowrap;
+}
+
+/* ---------- Scrollbar (subtle, matches the paper/stone palette) ---------- */
+
+* {
+  scrollbar-color: #C9C4B6 transparent;
+  scrollbar-width: thin;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: #C9C4B6;
+  border-radius: 8px;
+}
+
+/* ---------- Focus ring baseline for accessibility ---------- */
+
+:focus-visible {
+  outline: 2px solid #3A6B54;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
