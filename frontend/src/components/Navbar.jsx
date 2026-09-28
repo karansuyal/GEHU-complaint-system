@@ -17,12 +17,12 @@ export default function Navbar() {
 
   return (
     <nav
-      className="bg-paper/95 backdrop-blur border-b border-stone-300 sticky top-0 z-40"
+      className="bg-paper/90 backdrop-blur-md border-b border-stone-300 sticky top-0 z-40 shadow-[0_1px_0_rgba(23,33,29,0.02)]"
       style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        <Link to={user ? dashboardPath : '/'} className="flex items-center gap-2.5">
-          <div className="h-8 w-8 rounded-sm bg-pine-500 flex items-center justify-center text-paper font-display font-semibold text-base">
+        <Link to={user ? dashboardPath : '/'} className="flex items-center gap-2.5 group">
+          <div className="h-8 w-8 rounded-md bg-gradient-to-b from-pine-400 to-pine-500 flex items-center justify-center text-paper font-display font-semibold text-base shadow-[0_2px_8px_-2px_rgba(32,75,59,0.5)] transition-transform duration-150 group-hover:scale-105">
             G
           </div>
           <div className="leading-tight">
@@ -45,8 +45,8 @@ export default function Navbar() {
                 to={to}
                 end={end}
                 className={({ isActive }) =>
-                  `px-3 py-1.5 rounded-sm text-sm font-medium transition-colors ${
-                    isActive ? 'bg-pine-50 text-pine-600' : 'text-ink-soft hover:bg-stone-100'
+                  `px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-150 ${
+                    isActive ? 'bg-pine-50 text-pine-600 shadow-[inset_0_0_0_1px_rgba(32,75,59,0.08)]' : 'text-ink-soft hover:bg-stone-100'
                   }`
                 }
               >

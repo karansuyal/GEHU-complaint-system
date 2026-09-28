@@ -27,9 +27,9 @@ export default function ComplaintCard({ complaint, onClick, showWarden = false }
   return (
     <button
       onClick={onClick}
-      className="panel w-full text-left p-4 flex items-start gap-4 hover:border-pine-400 transition-colors group"
+      className="panel w-full text-left p-4 flex items-start gap-4 hover:border-pine-400/60 hover:shadow-lifted hover:-translate-y-0.5 transition-all duration-200 group"
     >
-      <div className="h-10 w-10 rounded-sm bg-stone-100 flex items-center justify-center text-lg shrink-0">
+      <div className="h-10 w-10 rounded-md bg-stone-100 flex items-center justify-center text-lg shrink-0 transition-transform duration-200 group-hover:scale-105 group-hover:bg-pine-50">
         {CATEGORY_ICONS[category] || '📋'}
       </div>
 

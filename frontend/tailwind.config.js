@@ -48,8 +48,9 @@ export default {
         sans: ['"IBM Plex Sans"', 'system-ui', '-apple-system', 'sans-serif']
       },
       boxShadow: {
-        card: '0 1px 2px rgba(23, 33, 29, 0.05)',
-        lifted: '0 8px 24px -8px rgba(23, 33, 29, 0.18)'
+        card: '0 1px 2px rgba(23, 33, 29, 0.05), 0 1px 1px rgba(23, 33, 29, 0.03)',
+        lifted: '0 16px 32px -12px rgba(23, 33, 29, 0.22)',
+        glow: '0 0 0 4px rgba(58, 107, 84, 0.12)'
       },
       borderRadius: {
         sm: '4px',
