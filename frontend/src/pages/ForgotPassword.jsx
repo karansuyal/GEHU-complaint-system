@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { authAPI } from '../api/client'
 import AuthShell from '../components/AuthShell'
 import { Field, OtpInput, PasswordInput, StrengthMeter } from '../components/Field'
+import useCooldown from '../hooks/useCooldown'
 import usePageTitle from '../hooks/usePageTitle'
 
 export default function ForgotPassword() {
@@ -14,13 +15,7 @@ export default function ForgotPassword() {
   const [otp, setOtp] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const [cooldown, setCooldown] = useState(0)
-
-  useEffect(() => {
-    if (cooldown <= 0) return
-    const t = setTimeout(() => setCooldown((c) => c - 1), 1000)
-    return () => clearTimeout(t)
-  }, [cooldown])
+  const [cooldown, startCooldown] = useCooldown(email || 'reset')
 
   const sendCode = async (e) => {
     e?.preventDefault()
@@ -29,7 +24,7 @@ export default function ForgotPassword() {
       await authAPI.forgotPassword(email.trim())
       toast.success('If that email is registered, a code is on its way.')
       setStep('reset')
-      setCooldown(60)
+      startCooldown(60)
     } catch {
       toast.error('Something went wrong. Please try again.')
     } finally {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { authAPI } from '../api/client'
@@ -6,10 +6,9 @@ import { useAuth } from '../context/AuthContext'
 import AuthShell from '../components/AuthShell'
 import { OtpInput } from '../components/Field'
 import Icon from '../components/Icon'
+import useCooldown from '../hooks/useCooldown'
 import usePageTitle from '../hooks/usePageTitle'
 import { roleHome } from '../utils/categories'
-
-const RESEND_SECONDS = 60
 
 export default function VerifyEmail() {
   usePageTitle('Verify email')
@@ -19,13 +18,7 @@ export default function VerifyEmail() {
   const navigate = useNavigate()
   const [otp, setOtp] = useState('')
   const [loading, setLoading] = useState(false)
-  const [cooldown, setCooldown] = useState(RESEND_SECONDS)
-
-  useEffect(() => {
-    if (cooldown <= 0) return
-    const t = setTimeout(() => setCooldown((c) => c - 1), 1000)
-    return () => clearTimeout(t)
-  }, [cooldown])
+  const [cooldown, startCooldown] = useCooldown(email || 'verify')
 
   // Opened directly (refresh / bookmark): we don't know the email, so go back.
   if (!email) return <Navigate to="/login" replace />
@@ -54,7 +47,7 @@ export default function VerifyEmail() {
     try {
       await authAPI.resendOtp(email)
       toast.success('New code sent.')
-      setCooldown(RESEND_SECONDS)
+      startCooldown(60)
       setOtp('')
     } catch {
       toast.error('Could not resend the code.')
