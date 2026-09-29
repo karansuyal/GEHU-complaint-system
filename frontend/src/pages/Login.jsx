@@ -1,12 +1,17 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
 import AuthShell from '../components/AuthShell'
+import { Field, PasswordInput } from '../components/Field'
+import usePageTitle from '../hooks/usePageTitle'
+import { roleHome } from '../utils/categories'
 
 export default function Login() {
+  usePageTitle('Sign in')
   const { login } = useAuth()
   const navigate = useNavigate()
+  const { state } = useLocation()
   const [form, setForm] = useState({ email: '', password: '' })
   const [loading, setLoading] = useState(false)
 
@@ -16,15 +21,16 @@ export default function Login() {
     try {
       const user = await login(form.email.trim(), form.password)
       toast.success(`Welcome back, ${user.name.split(' ')[0]}!`)
-      const path = user.role === 'admin' ? '/admin' : user.role === 'warden' ? '/warden' : '/dashboard'
-      navigate(path)
+      navigate(state?.from && state.from !== '/login' ? state.from : roleHome(user.role), { replace: true })
     } catch (err) {
       const detail = err.response?.data?.detail
       if (err.response?.status === 403 && detail === 'email_not_verified') {
-        toast('Please verify your email first — we sent you a new code.')
+        toast('Please verify your email first. We sent you a new code.')
         navigate('/verify-email', { state: { email: form.email.trim().toLowerCase() } })
       } else if (err.response?.status === 403 && detail === 'account_disabled') {
         toast.error('This account has been deactivated. Please contact the admin.')
+      } else if (!err.response) {
+        toast.error("Can't reach the server. Check your connection and try again.")
       } else {
         toast.error(typeof detail === 'string' ? detail : 'Login failed. Check your credentials.')
       }
@@ -36,49 +42,46 @@ export default function Login() {
   return (
     <AuthShell
       headline="A record for every issue raised on campus."
-      blurb="Every complaint filed at GEHU Bhimtal is logged, timestamped and tracked until it's resolved — visible to you at every step."
+      blurb="Every complaint filed at GEHU Bhimtal is logged, timestamped and tracked until it's resolved, and visible to you at every step."
       title="Sign in"
       subtitle="GEHU Bhimtal Complaint Registry"
       footer={
         <>
           New here?{' '}
-          <Link to="/register" className="text-pine-500 font-medium hover:underline">
+          <Link to="/register" className="text-accent font-medium hover:underline">
             Create an account
           </Link>
         </>
       }
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="field-label">College email</label>
+        <Field label="College email">
           <input
             type="email"
             required
             autoComplete="email"
+            inputMode="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            enterKeyHint="next"
             placeholder="you@gehu.ac.in"
             className="input-field"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
           />
-        </div>
-        <div>
-          <div className="flex items-center justify-between">
-            <label className="field-label">Password</label>
-            <Link to="/forgot-password" className="text-xs text-pine-500 font-medium hover:underline mb-1.5">
+        </Field>
+        <Field
+          label="Password"
+          labelExtra={
+            <Link to="/forgot-password" className="text-xs text-accent font-medium hover:underline mb-1.5">
               Forgot password?
             </Link>
-          </div>
-          <input
-            type="password"
-            required
-            autoComplete="current-password"
-            placeholder="••••••••"
-            className="input-field"
-            value={form.password}
-            onChange={(e) => setForm({ ...form, password: e.target.value })}
-          />
-        </div>
-        <button type="submit" disabled={loading} className="btn-primary w-full mt-2">
+          }
+        >
+          <PasswordInput required autoComplete="current-password" enterKeyHint="go" placeholder="Your password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+        </Field>
+        <button type="submit" disabled={loading} className="btn-primary w-full !mt-6">
           {loading ? 'Signing in…' : 'Sign in'}
         </button>
       </form>

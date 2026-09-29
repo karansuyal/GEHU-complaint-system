@@ -2,40 +2,127 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+   Design tokens. Colours are space-separated RGB triplets so Tailwind's
+   opacity modifiers (bg-ink/40) keep working. Dark values live under .dark.
+   ============================================================ */
 :root {
   color-scheme: light;
+  --c-paper: 250 249 246;
+  --c-surface: 255 255 255;
+  --c-accent: 32 75 59;
+  --c-ink: 23 33 29;
+  --c-ink-soft: 66 71 63;
+  --c-ink-faint: 122 120 108;
+  --c-stone-100: 241 239 233;
+  --c-stone-200: 228 225 216;
+  --c-stone-300: 222 219 211;
+  --c-stone-400: 201 196 182;
+  --c-pine-50: 234 241 236;
+  --c-pine-100: 220 232 224;
+  --c-pine-400: 58 107 84;
+  --c-pine-500: 32 75 59;
+  --c-pine-600: 25 60 47;
+  --c-pine-700: 19 46 36;
+  --c-brass-50: 251 243 228;
+  --c-brass-100: 243 225 187;
+  --c-brass-500: 184 134 46;
+  --c-brass-600: 150 112 31;
+  --c-rust-50: 249 237 234;
+  --c-rust-100: 240 213 204;
+  --c-rust-500: 168 65 46;
+  --c-rust-600: 138 51 36;
+  --c-slate-50: 235 240 243;
+  --c-slate-100: 211 222 229;
+  --c-slate-500: 59 91 115;
+  --c-slate-600: 46 74 94;
+  --shadow: 23 33 29;
+  --btn-a: 58 107 84;
+  --btn-b: 32 75 59;
+  --btn-a-hover: 32 75 59;
+  --btn-b-hover: 25 60 47;
+  --skeleton-a: 241 239 233;
+  --skeleton-b: 228 225 216;
+  --body-glow-a: rgba(32, 75, 59, 0.05);
+  --body-glow-b: rgba(184, 134, 46, 0.05);
+}
+
+.dark {
+  color-scheme: dark;
+  --c-paper: 14 20 17;
+  --c-surface: 21 29 25;
+  --c-accent: 116 196 156;
+  --c-ink: 233 238 234;
+  --c-ink-soft: 185 195 188;
+  --c-ink-faint: 141 153 146;
+  --c-stone-100: 27 37 32;
+  --c-stone-200: 35 47 41;
+  --c-stone-300: 46 60 53;
+  --c-stone-400: 65 82 74;
+  --c-pine-50: 21 39 30;
+  --c-pine-100: 29 54 41;
+  --c-pine-400: 74 149 118;
+  --c-pine-500: 63 135 102;
+  --c-pine-600: 138 208 174;
+  --c-pine-700: 169 224 197;
+  --c-brass-50: 42 33 20;
+  --c-brass-100: 61 47 23;
+  --c-brass-500: 214 162 74;
+  --c-brass-600: 224 181 101;
+  --c-rust-50: 43 26 23;
+  --c-rust-100: 71 38 32;
+  --c-rust-500: 200 90 70;
+  --c-rust-600: 232 142 124;
+  --c-slate-50: 22 35 44;
+  --c-slate-100: 34 56 70;
+  --c-slate-500: 91 147 184;
+  --c-slate-600: 141 187 216;
+  --shadow: 0 0 0;
+  --btn-a: 74 149 118;
+  --btn-b: 52 116 88;
+  --btn-a-hover: 63 135 102;
+  --btn-b-hover: 44 100 75;
+  --skeleton-a: 27 37 32;
+  --skeleton-b: 38 51 44;
+  --body-glow-a: rgba(74, 149, 118, 0.07);
+  --body-glow-b: rgba(214, 162, 74, 0.04);
 }
 
 html {
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
 }
 
 body {
-  font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
-  background-color: #FAF9F6;
+  font-family: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background-color: rgb(var(--c-paper));
   background-image:
-    radial-gradient(circle at 0% 0%, rgba(32, 75, 59, 0.05) 0%, transparent 45%),
-    radial-gradient(circle at 100% 0%, rgba(184, 134, 46, 0.05) 0%, transparent 40%);
+    radial-gradient(circle at 0% 0%, var(--body-glow-a) 0%, transparent 45%),
+    radial-gradient(circle at 100% 0%, var(--body-glow-b) 0%, transparent 40%);
   background-attachment: fixed;
-  color: #17211D;
+  color: rgb(var(--c-ink));
   -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-wrap: anywhere;
 }
 
-/* iOS Safari zooms in on inputs with a font-size under 16px — keep form
-   fields at 16px on touch screens so filing a complaint doesn't jump-zoom. */
-@media (max-width: 640px) {
+/* iOS Safari zooms into inputs under 16px: keep them 16px on touch screens. */
+@media (max-width: 767px) {
   .input-field,
   textarea.input-field,
-  select {
+  select.input-field {
     font-size: 16px;
   }
 }
 
 ::selection {
-  background-color: #DCE8E0;
-  color: #132E24;
+  background-color: rgb(var(--c-pine-100));
+  color: rgb(var(--c-pine-700));
 }
+
+img { max-width: 100%; }
 
 /* ---------- Typography ---------- */
 
@@ -44,8 +131,8 @@ body {
   font-feature-settings: 'ss01' 1;
 }
 
-/* Fluid heading scale — one rule that reads well from a 320px phone up to a
-   desktop monitor without separate sm:/lg: overrides on every heading. */
+/* Fluid scale: reads well from a 320px phone to a 4K monitor with no
+   per-breakpoint overrides on each heading. */
 .text-display-lg {
   font-size: clamp(1.75rem, 1.35rem + 1.8vw, 2.75rem);
   line-height: 1.12;
@@ -56,6 +143,11 @@ body {
   line-height: 1.18;
   letter-spacing: -0.01em;
 }
+.text-page-title {
+  font-size: clamp(1.5rem, 1.3rem + 0.9vw, 2rem);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
 
 /* ---------- Motion ---------- */
 
@@ -63,101 +155,94 @@ body {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.animate-fade-up {
-  animation: fade-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-.stagger > * {
-  animation: fade-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-.stagger > *:nth-child(1) { animation-delay: 0ms; }
-.stagger > *:nth-child(2) { animation-delay: 40ms; }
-.stagger > *:nth-child(3) { animation-delay: 80ms; }
-.stagger > *:nth-child(4) { animation-delay: 120ms; }
-.stagger > *:nth-child(5) { animation-delay: 160ms; }
-.stagger > *:nth-child(6) { animation-delay: 200ms; }
+.animate-fade-up { animation: fade-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) both; }
 
 @keyframes shimmer {
   from { background-position: -400px 0; }
   to   { background-position: 400px 0; }
 }
 .skeleton {
-  background: linear-gradient(90deg, #F1EFE9 25%, #E4E1D8 37%, #F1EFE9 63%);
+  background: linear-gradient(90deg, rgb(var(--skeleton-a)) 25%, rgb(var(--skeleton-b)) 37%, rgb(var(--skeleton-a)) 63%);
   background-size: 400px 100%;
   animation: shimmer 1.4s ease-in-out infinite;
-  @apply rounded-md;
-}
-
-@keyframes pop-in {
-  from { opacity: 0; transform: scale(0.96); }
-  to   { opacity: 1; transform: scale(1); }
-}
-.animate-pop {
-  animation: pop-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+  border-radius: 6px;
 }
 
 /* ---------- Form controls ---------- */
 
 .input-field {
-  @apply w-full px-3.5 py-2.5 bg-white border border-stone-300 rounded-md
+  @apply w-full px-3.5 py-2.5 min-h-[44px] bg-surface border border-stone-300 rounded-md
     text-[0.925rem] text-ink placeholder:text-ink-faint
-    shadow-[inset_0_1px_2px_rgba(23,33,29,0.03)]
-    focus:border-pine-500 focus:ring-4 focus:ring-pine-500/10 outline-none
-    transition-all duration-150;
+    focus:border-pine-400 focus:ring-4 focus:ring-pine-400/15 outline-none
+    transition-[border-color,box-shadow] duration-150;
 }
-
 .input-field:disabled {
-  @apply bg-stone-100 text-ink-faint cursor-not-allowed shadow-none;
+  @apply bg-stone-100 text-ink-faint cursor-not-allowed;
+}
+.input-field[aria-invalid='true'] {
+  @apply border-rust-500 focus:ring-rust-500/15;
+}
+select.input-field {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%238C8A7E' stroke-width='1.8'%3E%3Cpath d='m5 8 5 5 5-5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1.1rem;
+  padding-right: 2.5rem;
 }
 
 .field-label {
   @apply block text-[0.8rem] font-medium text-ink-soft mb-1.5;
 }
 
-/* ---------- Buttons ---------- */
+/* ---------- Buttons (44px minimum touch target) ---------- */
 
 .btn-primary {
-  @apply relative inline-flex items-center justify-center gap-1.5
-    bg-gradient-to-b from-pine-400 to-pine-500 hover:from-pine-500 hover:to-pine-600
-    text-white font-medium px-4 py-2.5 rounded-md text-sm
-    shadow-[0_1px_2px_rgba(23,33,29,0.1),0_4px_10px_-4px_rgba(32,75,59,0.45)]
-    hover:shadow-[0_1px_2px_rgba(23,33,29,0.1),0_8px_16px_-6px_rgba(32,75,59,0.55)]
-    hover:-translate-y-[1px] active:translate-y-0 active:shadow-none
-    transition-all duration-150
-    disabled:opacity-50 disabled:pointer-events-none disabled:translate-y-0 disabled:shadow-none;
+  @apply relative inline-flex items-center justify-center gap-1.5 min-h-[44px]
+    text-white font-medium px-5 py-2.5 rounded-md text-sm select-none
+    transition-[transform,box-shadow,background] duration-150
+    active:translate-y-px
+    disabled:opacity-50 disabled:pointer-events-none;
+  background-image: linear-gradient(to bottom, rgb(var(--btn-a)), rgb(var(--btn-b)));
+  box-shadow: 0 1px 2px rgb(var(--shadow) / 0.12), 0 4px 10px -4px rgb(var(--btn-b) / 0.55);
+}
+.btn-primary:hover {
+  background-image: linear-gradient(to bottom, rgb(var(--btn-a-hover)), rgb(var(--btn-b-hover)));
 }
 
 .btn-secondary {
-  @apply inline-flex items-center justify-center gap-1.5 bg-white border border-stone-300
+  @apply inline-flex items-center justify-center gap-1.5 min-h-[44px] bg-surface border border-stone-300
     hover:border-ink/25 hover:bg-stone-100 text-ink-soft font-medium px-4 py-2.5
-    rounded-md transition-all duration-150 text-sm hover:-translate-y-[1px]
-    active:translate-y-0 disabled:opacity-50 disabled:pointer-events-none disabled:translate-y-0;
+    rounded-md transition-colors duration-150 text-sm select-none active:translate-y-px
+    disabled:opacity-50 disabled:pointer-events-none;
 }
 
 .btn-ghost {
-  @apply inline-flex items-center justify-center gap-1.5 text-ink-soft hover:text-ink
+  @apply inline-flex items-center justify-center gap-1.5 min-h-[44px] text-ink-soft hover:text-ink
     hover:bg-stone-100 font-medium px-3 py-2 rounded-md transition-colors duration-150 text-sm;
+}
+
+.btn-danger {
+  @apply inline-flex items-center justify-center gap-1.5 min-h-[44px] bg-surface border border-rust-100
+    text-rust-600 hover:bg-rust-50 font-medium px-4 py-2.5 rounded-md text-sm transition-colors
+    disabled:opacity-50 disabled:pointer-events-none;
+}
+
+/* Compact variant for dense toolbars on desktop; still 44px on touch screens. */
+@media (min-width: 768px) {
+  .btn-sm { min-height: 36px; padding-top: 0.375rem; padding-bottom: 0.375rem; }
 }
 
 /* ---------- Surfaces ---------- */
 
-.card {
-  @apply bg-white rounded-lg border border-stone-300/80 shadow-card
-    transition-all duration-200;
-}
-
-.card-hover {
-  @apply hover:shadow-lifted hover:-translate-y-0.5 hover:border-stone-400/60;
-}
-
 .panel {
-  @apply bg-white rounded-lg border border-stone-300/80;
+  @apply bg-surface rounded-lg border border-stone-300/80 shadow-card;
 }
-
-.glass {
-  @apply bg-paper/80 backdrop-blur-md;
+.panel-hover {
+  @apply transition-[transform,box-shadow,border-color] duration-200
+    hover:border-pine-400/60 hover:shadow-lifted md:hover:-translate-y-0.5;
 }
-
-/* ---------- Registry / ticket motifs ---------- */
+.divider { @apply border-t border-stone-300/80; }
 
 .ticket-no {
   font-family: 'Fraunces', ui-serif, Georgia, serif;
@@ -165,54 +250,47 @@ body {
   @apply text-ink-soft;
 }
 
-.divider {
-  @apply border-t border-stone-300;
-}
-
-/* ---------- Status tag (flat, left-bar style — not a rounded pill kit) ---------- */
-
 .status-tag {
-  @apply inline-flex items-center gap-1.5 pl-2.5 pr-3 py-1 rounded-sm border text-xs font-medium
-    whitespace-nowrap transition-transform duration-150;
+  @apply inline-flex items-center gap-1.5 pl-2.5 pr-3 py-1 rounded-sm border text-xs font-medium whitespace-nowrap;
 }
 
-/* ---------- Stat / metric cards ---------- */
-
-.stat-card {
-  @apply card p-5 relative overflow-hidden;
-}
-.stat-card::before {
-  content: '';
-  @apply absolute -top-6 -right-6 h-24 w-24 rounded-full opacity-[0.06] pointer-events-none;
-  background: radial-gradient(circle, currentColor 0%, transparent 70%);
-}
-
-/* ---------- Scrollbar (subtle, matches the paper/stone palette) ---------- */
+/* ---------- Scrollbars ---------- */
 
 * {
-  scrollbar-color: #C9C4B6 transparent;
+  scrollbar-color: rgb(var(--c-stone-400)) transparent;
   scrollbar-width: thin;
 }
-*::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-*::-webkit-scrollbar-thumb {
-  background-color: #C9C4B6;
-  border-radius: 8px;
-}
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-thumb { background-color: rgb(var(--c-stone-400)); border-radius: 8px; }
 
-/* ---------- Focus ring baseline for accessibility ---------- */
+/* Horizontal chip rows scroll without a visible bar on touch devices. */
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* ---------- Accessibility ---------- */
 
 :focus-visible {
-  outline: 2px solid #3A6B54;
+  outline: 2px solid rgb(var(--c-accent));
   outline-offset: 2px;
+}
+.input-field:focus-visible { outline: none; }
+
+.skip-link {
+  @apply sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100]
+    focus:bg-surface focus:text-ink focus:px-4 focus:py-2.5 focus:rounded-md focus:shadow-lifted;
 }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
   html { scroll-behavior: auto; }
+}
+
+/* ---------- Print: a complaint page should print as a clean record ---------- */
+@media print {
+  nav, .no-print { display: none !important; }
+  body { background: #fff !important; }
 }

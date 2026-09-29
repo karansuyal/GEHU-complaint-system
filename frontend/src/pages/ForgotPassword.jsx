@@ -1,24 +1,35 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { authAPI } from '../api/client'
 import AuthShell from '../components/AuthShell'
+import { Field, OtpInput, PasswordInput, StrengthMeter } from '../components/Field'
+import usePageTitle from '../hooks/usePageTitle'
 
 export default function ForgotPassword() {
+  usePageTitle('Reset password')
   const navigate = useNavigate()
   const [step, setStep] = useState('email') // 'email' -> 'reset'
   const [email, setEmail] = useState('')
   const [otp, setOtp] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [cooldown, setCooldown] = useState(0)
+
+  useEffect(() => {
+    if (cooldown <= 0) return
+    const t = setTimeout(() => setCooldown((c) => c - 1), 1000)
+    return () => clearTimeout(t)
+  }, [cooldown])
 
   const sendCode = async (e) => {
-    e.preventDefault()
+    e?.preventDefault()
     setLoading(true)
     try {
       await authAPI.forgotPassword(email.trim())
       toast.success('If that email is registered, a code is on its way.')
       setStep('reset')
+      setCooldown(60)
     } catch {
       toast.error('Something went wrong. Please try again.')
     } finally {
@@ -47,68 +58,52 @@ export default function ForgotPassword() {
       blurb="Reset your password with a one-time code sent to your college email."
       title="Reset your password"
       subtitle={
-        step === 'email'
-          ? "Enter your college email and we'll send you a code."
-          : `Enter the 6-digit code we sent to ${email} and choose a new password.`
+        step === 'email' ? (
+          "Enter your college email and we'll send you a code."
+        ) : (
+          <>
+            Enter the 6-digit code we sent to <strong className="text-ink font-medium break-all">{email}</strong> and choose a new password.
+          </>
+        )
       }
       footer={
-        <Link to="/login" className="text-pine-500 font-medium hover:underline">
+        <Link to="/login" className="text-accent font-medium hover:underline">
           Back to sign in
         </Link>
       }
     >
       {step === 'email' ? (
         <form onSubmit={sendCode} className="space-y-4">
-          <div>
-            <label className="field-label">College email</label>
-            <input
-              type="email"
-              required
-              autoComplete="email"
-              placeholder="you@gehu.ac.in"
-              className="input-field"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
+          <Field label="College email">
+            <input type="email" required autoComplete="email" inputMode="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="you@gehu.ac.in" className="input-field" value={email} onChange={(e) => setEmail(e.target.value)} />
+          </Field>
           <button type="submit" disabled={loading} className="btn-primary w-full">
             {loading ? 'Sending…' : 'Send code'}
           </button>
         </form>
       ) : (
-        <form onSubmit={reset} className="space-y-4">
+        <form onSubmit={reset} className="space-y-5">
           <div>
-            <label className="field-label">Code</label>
-            <input
-              required
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              maxLength={6}
-              placeholder="000000"
-              className="input-field text-center font-display text-xl tracking-[0.4em]"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-            />
+            <p className="field-label">Code</p>
+            <OtpInput value={otp} onChange={setOtp} disabled={loading} />
           </div>
           <div>
-            <label className="field-label">New password</label>
-            <input
-              type="password"
-              required
-              minLength={8}
-              autoComplete="new-password"
-              className="input-field"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            <p className="text-xs text-ink-faint mt-1">At least 8 characters.</p>
+            <Field label="New password" hint={password ? undefined : 'At least 8 characters.'}>
+              <PasswordInput required minLength={8} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            </Field>
+            <StrengthMeter password={password} />
           </div>
-          <button type="submit" disabled={loading || otp.length !== 6} className="btn-primary w-full">
+          <button type="submit" disabled={loading || otp.length !== 6 || password.length < 8} className="btn-primary w-full">
             {loading ? 'Updating…' : 'Update password'}
           </button>
-          <button type="button" onClick={() => setStep('email')} className="w-full text-sm text-ink-soft hover:underline py-2">
-            Use a different email / resend code
-          </button>
+          <div className="flex gap-2">
+            <button type="button" onClick={sendCode} disabled={cooldown > 0 || loading} className="btn-ghost flex-1 disabled:!text-ink-faint">
+              {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend code'}
+            </button>
+            <button type="button" onClick={() => setStep('email')} className="btn-ghost flex-1">
+              Different email
+            </button>
+          </div>
         </form>
       )}
     </AuthShell>

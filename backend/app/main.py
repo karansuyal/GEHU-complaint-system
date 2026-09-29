@@ -47,4 +47,4 @@ app.include_router(staff.router, prefix="/api/v1")
 
 @app.get("/api/v1/health")
 def health():
-    return {"status": "ok", "campus": settings.CAMPUS_NAME}
+    return {"status": "ok", "campus": settings.CAMPUS_NAME, "email_provider": settings.email_provider}

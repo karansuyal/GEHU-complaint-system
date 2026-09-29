@@ -1,23 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { notificationsAPI } from '../api/client'
+import { timeAgo } from '../utils/date'
+import Icon from './Icon'
 
-const TYPE_ICONS = {
-  new_complaint: '📥',
-  status_change: '🔄',
-  new_comment: '💬',
-  escalation: '⚠️'
-}
-
-function timeAgo(dateStr) {
-  const seconds = Math.floor((Date.now() - new Date(dateStr + 'Z').getTime()) / 1000)
-  if (seconds < 60) return 'just now'
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  return `${days}d ago`
+const TYPE_ICONS = { new_complaint: 'inbox', status_change: 'refresh', new_comment: 'message', escalation: 'warning' }
+const TYPE_TONES = {
+  new_complaint: 'bg-slate-50 text-slate-600',
+  status_change: 'bg-pine-50 text-pine-600',
+  new_comment: 'bg-brass-50 text-brass-600',
+  escalation: 'bg-rust-50 text-rust-600'
 }
 
 export default function NotificationBell() {
@@ -28,26 +20,37 @@ export default function NotificationBell() {
   const [loading, setLoading] = useState(false)
   const wrapperRef = useRef(null)
 
-  const refreshCount = () => {
+  const refreshCount = useCallback(() => {
+    if (document.visibilityState === 'hidden') return
     notificationsAPI
       .unreadCount()
       .then(({ data }) => setUnread(data.count))
       .catch(() => {})
-  }
+  }, [])
 
   useEffect(() => {
     refreshCount()
     const interval = setInterval(refreshCount, 20000)
-    return () => clearInterval(interval)
-  }, [])
+    document.addEventListener('visibilitychange', refreshCount)
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', refreshCount)
+    }
+  }, [refreshCount])
 
   useEffect(() => {
-    function handleClickOutside(e) {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) setOpen(false)
+    if (!open) return
+    const onDown = (e) => wrapperRef.current && !wrapperRef.current.contains(e.target) && setOpen(false)
+    const onKey = (e) => e.key === 'Escape' && setOpen(false)
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('touchstart', onDown, { passive: true })
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('touchstart', onDown)
+      document.removeEventListener('keydown', onKey)
     }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+  }, [open])
 
   const toggleOpen = () => {
     const next = !open
@@ -90,54 +93,57 @@ export default function NotificationBell() {
     <div className="relative" ref={wrapperRef}>
       <button
         onClick={toggleOpen}
-        aria-label="Notifications"
-        className="relative h-9 w-9 rounded-sm flex items-center justify-center text-ink-soft hover:bg-stone-100 hover:text-ink transition-colors"
+        aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        className="relative h-11 w-11 sm:h-10 sm:w-10 rounded-md flex items-center justify-center text-ink-soft hover:bg-stone-100 hover:text-ink transition-colors"
       >
-        <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth="1.7">
-          <path
-            d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 0 0-4-5.66V5a2 2 0 1 0-4 0v.34A6 6 0 0 0 6 11v3.2a2 2 0 0 1-.6 1.4L4 17h5m6 0v1a3 3 0 1 1-6 0v-1m6 0H9"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+        <Icon name="bell" />
         {unread > 0 && (
-          <span className="absolute top-0.5 right-0.5 h-[17px] min-w-[17px] px-1 rounded-full bg-rust-500 text-white text-[10px] font-semibold flex items-center justify-center">
+          <span className="absolute top-1 right-1 h-[18px] min-w-[18px] px-1 rounded-full bg-rust-500 text-white text-[10px] font-semibold flex items-center justify-center ring-2 ring-paper">
             {unread > 9 ? '9+' : unread}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="fixed left-3 right-3 top-[4.25rem] sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-80 card shadow-lifted overflow-hidden z-50">
-          <div className="flex items-center justify-between px-4 py-3 divider">
+        <div
+          role="dialog"
+          aria-label="Notifications"
+          className="fixed left-3 right-3 top-[calc(4.25rem+env(safe-area-inset-top,0px))] sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96 panel shadow-lifted overflow-hidden z-50 animate-fade-in"
+        >
+          <div className="flex items-center justify-between px-4 py-3 border-b border-stone-200">
             <p className="text-sm font-medium text-ink">Notifications</p>
             {unread > 0 && (
-              <button onClick={markAllRead} className="text-xs text-pine-500 font-medium hover:underline">
+              <button onClick={markAllRead} className="text-xs text-accent font-medium hover:underline min-h-[32px]">
                 Mark all read
               </button>
             )}
           </div>
-          <div className="max-h-96 overflow-y-auto">
+          <div className="max-h-[min(24rem,60dvh)] overflow-y-auto overscroll-contain">
             {loading ? (
-              <p className="text-sm text-ink-faint text-center py-8">Loading…</p>
+              <p className="text-sm text-ink-faint text-center py-10">Loading…</p>
             ) : items.length === 0 ? (
-              <p className="text-sm text-ink-faint text-center py-8">You're all caught up.</p>
+              <div className="text-center py-10 px-6">
+                <Icon name="bell" className="h-7 w-7 mx-auto text-stone-400 mb-2" />
+                <p className="text-sm text-ink-soft">You're all caught up.</p>
+              </div>
             ) : (
               items.map((item) => (
                 <button
                   key={item.id}
                   onClick={() => handleItemClick(item)}
-                  className={`w-full text-left px-4 py-3 flex gap-2.5 hover:bg-stone-100 transition-colors border-b border-stone-200 last:border-b-0 ${
-                    !item.is_read ? 'bg-pine-50/60' : ''
-                  }`}
+                  className={`w-full text-left px-4 py-3 flex gap-3 hover:bg-stone-100 transition-colors border-b border-stone-200 last:border-b-0 ${!item.is_read ? 'bg-pine-50/60' : ''}`}
                 >
-                  <span className="text-base shrink-0 mt-0.5">{TYPE_ICONS[item.type] || '🔔'}</span>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-ink truncate">{item.title}</p>
-                    <p className="text-xs text-ink-faint mt-0.5 line-clamp-2">{item.body}</p>
-                    <p className="text-[11px] text-ink-faint/80 mt-1">{timeAgo(item.created_at)}</p>
-                  </div>
-                  {!item.is_read && <span className="h-1.5 w-1.5 rounded-full bg-pine-500 shrink-0 mt-1.5" />}
+                  <span className={`h-8 w-8 rounded-full shrink-0 flex items-center justify-center ${TYPE_TONES[item.type] || 'bg-stone-100 text-ink-soft'}`}>
+                    <Icon name={TYPE_ICONS[item.type] || 'bell'} className="h-4 w-4" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-medium text-ink truncate">{item.title}</span>
+                    <span className="block text-xs text-ink-soft mt-0.5 line-clamp-2">{item.body}</span>
+                    <span className="block text-[11px] text-ink-faint mt-1">{timeAgo(item.created_at)}</span>
+                  </span>
+                  {!item.is_read && <span className="h-2 w-2 rounded-full bg-accent shrink-0 mt-2" aria-label="Unread" />}
                 </button>
               ))
             )}

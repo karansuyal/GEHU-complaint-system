@@ -1,78 +1,92 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { complaintsAPI } from '../api/client'
+import { useAuth } from '../context/AuthContext'
 import ComplaintCard from '../components/ComplaintCard'
+import EmptyState from '../components/EmptyState'
+import FilterChips from '../components/FilterChips'
+import PageHeader from '../components/PageHeader'
+import Icon from '../components/Icon'
+import { ListSkeleton } from '../components/Skeleton'
+import StatTile from '../components/StatTile'
+import usePageTitle from '../hooks/usePageTitle'
+
+const FILTERS = [
+  ['all', 'All'],
+  ['pending', 'Pending'],
+  ['in_progress', 'In progress'],
+  ['escalated', 'Escalated'],
+  ['resolved', 'Resolved']
+]
 
 export default function StudentDashboard() {
-  const navigate = useNavigate()
+  usePageTitle('My complaints')
+  const { user } = useAuth()
   const [complaints, setComplaints] = useState([])
   const [loading, setLoading] = useState(true)
+  const [failed, setFailed] = useState(false)
   const [filter, setFilter] = useState('all')
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true)
+    setFailed(false)
     complaintsAPI
       .listMine()
       .then(({ data }) => setComplaints(data))
-      .catch(() => setComplaints([]))
+      .catch(() => setFailed(true))
       .finally(() => setLoading(false))
-  }, [])
-
-  const filtered =
-    filter === 'all' ? complaints : complaints.filter((c) => c.status === filter)
-
-  const counts = {
-    all: complaints.length,
-    pending: complaints.filter((c) => c.status === 'pending').length,
-    in_progress: complaints.filter((c) => c.status === 'in_progress').length,
-    resolved: complaints.filter((c) => c.status === 'resolved').length
   }
+  useEffect(load, [])
+
+  const filtered = filter === 'all' ? complaints : complaints.filter((c) => c.status === filter)
+  const count = (s) => complaints.filter((c) => c.status === s).length
+  const counts = { all: complaints.length, pending: count('pending'), in_progress: count('in_progress'), escalated: count('escalated'), resolved: count('resolved') }
+  // Escalated is only worth a chip when there is one.
+  const filters = FILTERS.filter(([k]) => k !== 'escalated' || counts.escalated > 0)
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-10">
-      <div className="flex items-start sm:items-center justify-between gap-4 mb-7 flex-col sm:flex-row">
-        <div>
-          <p className="text-xs uppercase tracking-wide text-ink-faint mb-1">Student Dashboard</p>
-          <h1 className="font-display text-2xl text-ink">My complaints</h1>
-        </div>
-        <Link to="/complaints/new" className="btn-primary w-full sm:w-auto">
-          File a complaint
-        </Link>
-      </div>
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+      <PageHeader
+        title={`Hi ${user?.name?.split(' ')[0] || 'there'}, here's where things stand`}
+        subtitle="Your complaints and their latest status"
+        actions={
+          <Link to="/complaints/new" className="btn-primary">
+            <Icon name="plus" className="h-4 w-4" strokeWidth={2.2} /> File a complaint
+          </Link>
+        }
+      />
 
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
-        {[
-          ['all', 'All'],
-          ['pending', 'Pending'],
-          ['in_progress', 'In progress'],
-          ['resolved', 'Resolved']
-        ].map(([key, label]) => (
-          <button
-            key={key}
-            onClick={() => setFilter(key)}
-            className={`px-3 py-1.5 rounded-sm text-sm whitespace-nowrap border transition-colors ${
-              filter === key
-                ? 'bg-pine-500 text-paper border-pine-500'
-                : 'bg-white text-ink-soft border-stone-300 hover:border-ink/30'
-            }`}
-          >
-            {label} <span className="opacity-70">({counts[key] ?? 0})</span>
-          </button>
-        ))}
+      {!loading && complaints.length > 0 && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+          <StatTile label="Total filed" value={counts.all} />
+          <StatTile label="Pending" value={counts.pending} />
+          <StatTile label="In progress" value={counts.in_progress} />
+          <StatTile label="Resolved" value={counts.resolved} tone="good" />
+        </div>
+      )}
+
+      <div className="mb-5">
+        <FilterChips options={filters} value={filter} onChange={setFilter} counts={counts} label="Filter by status" />
       </div>
 
       {loading ? (
-        <p className="text-sm text-ink-faint text-center py-14">Loading…</p>
+        <ListSkeleton rows={4} grid />
+      ) : failed ? (
+        <EmptyState icon="warning" title="Couldn't load your complaints" action={<button className="btn-secondary" onClick={load}>Try again</button>}>
+          Check your connection and try again.
+        </EmptyState>
       ) : filtered.length === 0 ? (
-        <div className="panel border-dashed p-12 text-center">
-          <p className="text-ink-soft text-sm">No complaints here yet.</p>
-          <Link to="/complaints/new" className="text-pine-500 text-sm font-medium hover:underline mt-2 inline-block">
-            File your first complaint
-          </Link>
-        </div>
+        <EmptyState
+          icon="clipboard"
+          title={filter === 'all' ? 'No complaints yet' : 'Nothing here'}
+          action={filter === 'all' ? <Link to="/complaints/new" className="btn-primary">File your first complaint</Link> : <button className="btn-secondary" onClick={() => setFilter('all')}>Show all</button>}
+        >
+          {filter === 'all' ? 'When something on campus needs fixing, file it here and track it to the end.' : 'No complaints have this status.'}
+        </EmptyState>
       ) : (
-        <div className="space-y-3">
+        <div className="grid gap-3 lg:grid-cols-2">
           {filtered.map((c) => (
-            <ComplaintCard key={c.id} complaint={c} onClick={() => navigate(`/complaints/${c.id}`)} />
+            <ComplaintCard key={c.id} complaint={c} />
           ))}
         </div>
       )}

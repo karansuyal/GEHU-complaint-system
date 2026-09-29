@@ -8,6 +8,8 @@ from app.models.complaint import Complaint, ComplaintStatus, generate_ticket_id
 from app.models.status_history import StatusHistory
 from app.models.user import User, UserRole, ComplaintCategory
 from app.models.notification import NotificationType
+from app.services.email import email_enabled, send_email_async
+from app.services.email_templates import complaint_received_email
 from app.services.notifications import notify_user
 
 
@@ -71,6 +73,14 @@ def create_complaint(
     )
     db.commit()
     db.refresh(complaint)
+
+    # Receipt for the student. Anonymous / ragging complaints get a generic
+    # one (no title, no category) in case the inbox is shared.
+    if email_enabled() and student.email:
+        subject, text, html = complaint_received_email(
+            student.name, complaint.ticket_id, complaint.title, complaint.id, private=force_anonymous
+        )
+        send_email_async(student.email, subject, text, html)
 
     # Notify whoever now owns this complaint: the matched warden, or every
     # campus admin when it's ragging / nobody covers that category yet.

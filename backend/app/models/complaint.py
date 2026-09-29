@@ -84,5 +84,19 @@ class Complaint(Base):
         return base + timedelta(days=settings.REOPEN_WINDOW_DAYS)
 
     @property
+    def sla_deadline(self) -> datetime | None:
+        """When this complaint escalates if nobody acts (None once resolved or
+        escalated). Mirrors the rule in services/escalation.py so the UI can
+        show a countdown."""
+        if self.status not in (ComplaintStatus.pending, ComplaintStatus.in_progress):
+            return None
+        hours = (
+            settings.RAGGING_ESCALATION_SLA_HOURS
+            if self.category == ComplaintCategory.ragging
+            else settings.ESCALATION_SLA_HOURS
+        )
+        return (self.reopened_at or self.created_at) + timedelta(hours=hours)
+
+    @property
     def assigned_warden_name(self) -> str | None:
         return self.assigned_warden.name if self.assigned_warden else None

@@ -38,6 +38,7 @@ class ComplaintOut(BaseModel):
     assigned_warden_name: Optional[str] = None
     resolved_at: Optional[datetime] = None
     reopen_deadline: Optional[datetime] = None
+    sla_deadline: Optional[datetime] = None
     reopened_count: int = 0
     reopen_reason: Optional[str] = None
     rating: Optional[int] = None
@@ -64,6 +65,7 @@ class ComplaintListItem(BaseModel):
     assigned_warden_name: Optional[str] = None
     reopened_count: int = 0
     rating: Optional[int] = None
+    sla_deadline: Optional[datetime] = None
 
     model_config = {"from_attributes": True}
 

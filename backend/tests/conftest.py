@@ -9,6 +9,7 @@ os.environ["DATABASE_URL"] = f"sqlite:///{_tmp}/test.db"
 os.environ["OTP_RESEND_COOLDOWN_SECONDS"] = "0"
 os.environ["ALLOWED_EMAIL_DOMAINS"] = ""
 os.environ["SMTP_HOST"] = ""
+os.environ["BREVO_API_KEY"] = ""
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import pytest
@@ -27,7 +28,7 @@ def client():
 def sent_emails(monkeypatch):
     """Captures OTP emails instead of printing them."""
     box = []
-    monkeypatch.setattr("app.api.routes.auth.send_email", lambda to, subject, body: box.append((to, subject, body)))
+    monkeypatch.setattr("app.api.routes.auth.send_email", lambda to, subject, body, html=None: box.append((to, subject, body)))
     return box
 
 

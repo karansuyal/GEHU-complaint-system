@@ -1,24 +1,21 @@
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { roleHome } from '../utils/categories'
 
-// Wraps a page and enforces: (1) user must be logged in,
-// (2) if `roles` is passed, user.role must be one of them.
+// Requires a signed-in user and, if `roles` is passed, one of those roles.
 export default function ProtectedRoute({ children, roles }) {
   const { user, loading } = useAuth()
+  const location = useLocation()
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-paper">
-        <div className="animate-spin h-7 w-7 border-2 border-pine-500 border-t-transparent rounded-full" />
+      <div className="min-h-[60dvh] flex items-center justify-center" role="status">
+        <div className="animate-spin h-7 w-7 border-2 border-accent border-t-transparent rounded-full" />
+        <span className="sr-only">Loading…</span>
       </div>
     )
   }
-
-  if (!user) return <Navigate to="/login" replace />
-
-  if (roles && !roles.includes(user.role)) {
-    return <Navigate to="/" replace />
-  }
-
+  if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />
+  if (roles && !roles.includes(user.role)) return <Navigate to={roleHome(user.role)} replace />
   return children
 }

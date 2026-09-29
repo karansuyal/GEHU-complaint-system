@@ -20,6 +20,12 @@ from app.schemas.auth import (
     VerifyEmailRequest,
 )
 from app.services.email import send_email
+from app.services.email_templates import (
+    otp_email,
+    password_changed_email,
+    staff_added_email,
+    welcome_email,
+)
 from app.services.otp import PURPOSE_RESET, PURPOSE_VERIFY, OTPError, check_otp, create_otp
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -36,21 +42,8 @@ def _issue_code(db: Session, background: BackgroundTasks, email: str, purpose: s
     code = create_otp(db, email, purpose)
     if code is None:
         return
-    minutes = settings.OTP_EXPIRE_MINUTES
-    if purpose == PURPOSE_VERIFY:
-        subject = "Your GEHU Complaint Portal verification code"
-        body = (
-            f"Your verification code is {code}\n\n"
-            f"It expires in {minutes} minutes. If you didn't sign up, ignore this email."
-        )
-    else:
-        subject = "Reset your GEHU Complaint Portal password"
-        body = (
-            f"Your password reset code is {code}\n\n"
-            f"It expires in {minutes} minutes. If you didn't ask for this, ignore this email "
-            "- your password has not been changed."
-        )
-    background.add_task(send_email, email, subject, body)
+    subject, text, html = otp_email(code, purpose, settings.OTP_EXPIRE_MINUTES)
+    background.add_task(send_email, email, subject, text, html)
 
 
 def _check_domain(email: str) -> None:
@@ -103,7 +96,7 @@ def register(payload: RegisterRequest, background: BackgroundTasks, db: Session 
 
 
 @router.post("/verify-email", response_model=TokenResponse)
-def verify_email(payload: VerifyEmailRequest, db: Session = Depends(get_db)):
+def verify_email(payload: VerifyEmailRequest, background: BackgroundTasks, db: Session = Depends(get_db)):
     user = user_crud.get_user_by_email(db, payload.email)
     try:
         if not user:
@@ -115,6 +108,8 @@ def verify_email(payload: VerifyEmailRequest, db: Session = Depends(get_db)):
     user.is_verified = True
     db.commit()
     db.refresh(user)
+    subject, text, html = welcome_email(user.name)
+    background.add_task(send_email, user.email, subject, text, html)
     return _token_for(user)
 
 
@@ -137,7 +132,7 @@ def forgot_password(payload: EmailOnlyRequest, background: BackgroundTasks, db: 
 
 
 @router.post("/reset-password", response_model=MessageResponse)
-def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db)):
+def reset_password(payload: ResetPasswordRequest, background: BackgroundTasks, db: Session = Depends(get_db)):
     user = user_crud.get_user_by_email(db, payload.email)
     try:
         if not user or not user.is_active:
@@ -149,6 +144,9 @@ def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db))
     user.hashed_password = hash_password(payload.new_password)
     user.is_verified = True  # receiving the reset code proves they own the inbox
     db.commit()
+    # Security alert: if this wasn't them, they find out immediately.
+    subject, text, html = password_changed_email(user.name)
+    background.add_task(send_email, user.email, subject, text, html)
     return MessageResponse(message="Password updated. You can sign in now.")
 
 
@@ -179,6 +177,7 @@ def me(current_user: User = Depends(get_current_user)):
 @router.post("/create-staff", response_model=UserOut)
 def create_staff(
     payload: RegisterRequest,
+    background: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -202,4 +201,9 @@ def create_staff(
         payload.handles_category = None
     payload.campus = current_user.campus
 
-    return user_crud.create_user(db, payload, is_verified=True)
+    user = user_crud.create_user(db, payload, is_verified=True)
+    subject, text, html = staff_added_email(
+        user.name, user.role.value, user.handles_category.value if user.handles_category else None
+    )
+    background.add_task(send_email, user.email, subject, text, html)
+    return user

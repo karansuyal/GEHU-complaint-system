@@ -5,6 +5,10 @@ from sqlalchemy.orm import Session
 from pywebpush import webpush, WebPushException
 
 from app.core.config import settings
+from app.models.complaint import Complaint
+from app.models.user import ComplaintCategory
+from app.services.email import email_enabled, send_email_async
+from app.services.email_templates import notification_email
 from app.models.notification import Notification, NotificationType
 from app.models.push_subscription import PushSubscription
 from app.models.user import User
@@ -42,6 +46,33 @@ def _send_push(db: Session, subscription: PushSubscription, title: str, body: st
             logger.warning("Push send failed: %s", exc)
 
 
+def _email_copy(
+    db: Session,
+    user: User,
+    type: NotificationType,
+    title: str,
+    body: str,
+    complaint_id: str | None,
+) -> None:
+    """Also emails the notification (async, never blocks or raises). Skipped
+    when no real provider is configured or the type is switched off."""
+    try:
+        if not (settings.EMAIL_NOTIFICATIONS_ENABLED and email_enabled()):
+            return
+        if type.value not in settings.email_notify_types or not user.email or not user.is_active:
+            return
+        # Ragging details never travel by email: point staff at the portal instead.
+        if complaint_id:
+            complaint = db.get(Complaint, complaint_id)
+            if complaint and complaint.category == ComplaintCategory.ragging:
+                body = "A sensitive complaint needs your attention. Open the portal to view it."
+        path = f"/complaints/{complaint_id}" if complaint_id else "/"
+        subject, text, html = notification_email(user.name, title, body, path)
+        send_email_async(user.email, subject, text, html)
+    except Exception:  # noqa: BLE001
+        logger.exception("Could not queue notification email for user %s", user.id)
+
+
 def notify_user(
     db: Session,
     user: User,
@@ -62,6 +93,8 @@ def notify_user(
     db.add(notification)
     db.commit()
     db.refresh(notification)
+
+    _email_copy(db, user, type, title, body, complaint_id)
 
     subscriptions = db.query(PushSubscription).filter(PushSubscription.user_id == user.id).all()
     url = f"/complaints/{complaint_id}" if complaint_id else "/"

@@ -22,6 +22,34 @@ alembic revision --autogenerate -m "add thing"   # after editing a model
 alembic check                                     # fails if models and migrations disagree
 ```
 
+## Emails (Brevo)
+
+The portal sends real, branded HTML emails (plain-text part included) through the
+Brevo transactional API over HTTPS, so it works on hosts that block SMTP.
+
+| Email | When |
+|---|---|
+| Verification code | signup / resend |
+| Welcome | after the email is verified |
+| Password reset code | forgot password |
+| Password changed (security alert) | after a reset, or when an admin resets a staff password |
+| Complaint received (with ticket no.) | student files a complaint. Anonymous/ragging ones stay generic |
+| New complaint / status change / escalation | copy of the in-app notification (`EMAIL_NOTIFY_TYPES`) |
+| Staff account created | admin adds a warden/admin (the password is never emailed) |
+
+Setup:
+
+1. Brevo > **Senders, Domains & Dedicated IPs** > add and verify a sender address.
+2. Brevo > **SMTP & API** > **API Keys** > generate a key (starts with `xkeysib-`).
+3. Brevo > **Security** > **Authorised IPs**: deactivate the blocking (cloud hosts change IP).
+4. Put `BREVO_API_KEY`, `EMAIL_FROM_ADDRESS`, `EMAIL_FROM_NAME` in `.env` (see `.env.example`).
+5. Check it: `python send_test_email.py you@example.com`. `GET /api/v1/health` also shows
+   `email_provider` (`brevo`, `smtp` or `console`).
+
+Sending never blocks or breaks a request: failures are logged, 429/5xx are retried, and
+notification emails go out on a background thread. The free Brevo plan allows 300 emails/day.
+For best inbox placement authenticate your own domain (SPF/DKIM/DMARC) in Brevo.
+
 ## Email verification and password reset
 
 New students must prove they own their email. `POST /auth/register` creates the
@@ -30,9 +58,9 @@ cooldown); `POST /auth/verify-email` completes signup and logs them in.
 "Forgot password" uses the same mechanism (`/auth/forgot-password` then
 `/auth/reset-password`).
 
-- **Local dev:** leave `SMTP_HOST` blank. The code is printed in the backend
-  console instead of being emailed.
-- **Production:** set the `SMTP_*` values in `.env` (Gmail/SES/Brevo/etc.) and set
+- **Local dev:** leave `BREVO_API_KEY` and `SMTP_HOST` blank. Emails are printed
+  in the backend console instead of being sent.
+- **Production (Brevo):** see the next section. Also set
   `ALLOWED_EMAIL_DOMAINS=gehu.ac.in` so only college emails can register.
 - `REQUIRE_EMAIL_VERIFICATION=false` skips OTPs (quick testing only).
 - Staff accounts created by an admin are verified immediately.

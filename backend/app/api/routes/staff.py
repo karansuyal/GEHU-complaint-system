@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -8,6 +8,8 @@ from app.crud import complaint as complaint_crud
 from app.db.database import get_db
 from app.models.complaint import Complaint, ComplaintStatus
 from app.models.user import ComplaintCategory, User, UserRole
+from app.services.email import send_email
+from app.services.email_templates import password_changed_email
 from app.schemas.auth import MessageResponse, StaffOut, StaffPasswordReset, StaffUpdate
 
 router = APIRouter(prefix="/staff", tags=["staff"])
@@ -125,10 +127,13 @@ def update_staff(
 def reset_staff_password(
     staff_id: str,
     payload: StaffPasswordReset,
+    background: BackgroundTasks,
     db: Session = Depends(get_db),
     admin: User = Depends(require_roles(UserRole.admin)),
 ):
     user = _get_staff(db, staff_id, admin)
     user.hashed_password = hash_password(payload.new_password)
     db.commit()
+    subject, text, html = password_changed_email(user.name)
+    background.add_task(send_email, user.email, subject, text, html)
     return MessageResponse(message=f"Password updated for {user.name}")

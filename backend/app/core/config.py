@@ -1,3 +1,5 @@
+import re
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -41,8 +43,29 @@ class Settings(BaseSettings):
     OTP_MAX_ATTEMPTS: int = 5
     OTP_RESEND_COOLDOWN_SECONDS: int = 60
 
-    # SMTP for sending OTP emails. Leave SMTP_HOST blank in dev: the code is
-    # then printed in the backend console instead of being emailed.
+    # ---- Brevo (https://www.brevo.com) transactional email ----
+    # Preferred provider. Uses Brevo's HTTPS API (port 443), so it works on
+    # hosts that block SMTP (Render/Railway free tiers etc.).
+    # Create a v3 API key at Brevo -> SMTP & API -> API Keys (starts "xkeysib-").
+    BREVO_API_KEY: str = ""
+    BREVO_API_URL: str = "https://api.brevo.com/v3/smtp/email"
+    # Must be a sender you verified in Brevo (Senders, Domains & Dedicated IPs).
+    EMAIL_FROM_ADDRESS: str = ""
+    EMAIL_FROM_NAME: str = "GEHU Complaint Portal"
+    EMAIL_REPLY_TO: str = ""
+    EMAIL_TIMEOUT_SECONDS: int = 10
+    EMAIL_MAX_RETRIES: int = 2
+
+    # Email copies of in-app notifications (status changes, escalations, ...).
+    # Only sent when a real provider (Brevo or SMTP) is configured.
+    EMAIL_NOTIFICATIONS_ENABLED: bool = True
+    # Which notification types are also emailed. new_comment is off by default
+    # so a busy thread doesn't flood inboxes.
+    EMAIL_NOTIFY_TYPES: str = "new_complaint,status_change,escalation"
+
+    # Fallback SMTP (Brevo's relay smtp-relay.brevo.com:587 also works here).
+    # With neither BREVO_API_KEY nor SMTP_HOST set (local dev) emails are
+    # printed to the backend console instead.
     SMTP_HOST: str = ""
     SMTP_PORT: int = 587
     SMTP_USERNAME: str = ""
@@ -52,6 +75,26 @@ class Settings(BaseSettings):
 
     # How long after a complaint is marked resolved the student can reopen it.
     REOPEN_WINDOW_DAYS: int = 7
+
+    @property
+    def email_notify_types(self) -> set[str]:
+        return {t.strip() for t in self.EMAIL_NOTIFY_TYPES.split(",") if t.strip()}
+
+    @property
+    def email_provider(self) -> str:
+        if self.BREVO_API_KEY:
+            return "brevo"
+        if self.SMTP_HOST:
+            return "smtp"
+        return "console"
+
+    @property
+    def sender_address(self) -> str:
+        """Bare sender address. Falls back to the address inside EMAIL_FROM."""
+        if self.EMAIL_FROM_ADDRESS:
+            return self.EMAIL_FROM_ADDRESS
+        m = re.search(r"<([^>]+)>", self.EMAIL_FROM)
+        return m.group(1) if m else self.EMAIL_FROM
 
     @property
     def allowed_email_domains(self) -> list[str]:

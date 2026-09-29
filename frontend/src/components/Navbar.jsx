@@ -1,52 +1,52 @@
-import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { roleHome } from '../utils/categories'
 import NotificationBell from './NotificationBell'
 import PresenceBadge from './PresenceBadge'
+import ThemeToggle from './ThemeToggle'
+import UserMenu from './UserMenu'
+
+const LINKS = {
+  student: [
+    ['/dashboard', 'My complaints', true],
+    ['/complaints/new', 'File complaint', false]
+  ],
+  admin: [
+    ['/admin', 'Overview', true],
+    ['/admin/complaints', 'Complaints', false],
+    ['/admin/staff', 'Staff', false]
+  ],
+  warden: []
+}
 
 export default function Navbar() {
-  const { user, logout } = useAuth()
-  const navigate = useNavigate()
-
-  const handleLogout = () => {
-    logout()
-    navigate('/login')
-  }
-
-  const dashboardPath =
-    user?.role === 'admin' ? '/admin' : user?.role === 'warden' ? '/warden' : '/dashboard'
+  const { user } = useAuth()
+  const links = LINKS[user?.role] || []
 
   return (
-    <nav
-      className="bg-paper/90 backdrop-blur-md border-b border-stone-300 sticky top-0 z-40 shadow-[0_1px_0_rgba(23,33,29,0.02)]"
+    <header
+      className="bg-paper/90 backdrop-blur-md border-b border-stone-300/80 sticky top-0 z-40 no-print"
       style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
     >
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        <Link to={user ? dashboardPath : '/'} className="flex items-center gap-2.5 group">
-          <div className="h-8 w-8 rounded-md bg-gradient-to-b from-pine-400 to-pine-500 flex items-center justify-center text-paper font-display font-semibold text-base shadow-[0_2px_8px_-2px_rgba(32,75,59,0.5)] transition-transform duration-150 group-hover:scale-105">
-            G
-          </div>
-          <div className="leading-tight">
-            <p className="font-display font-semibold text-ink text-[0.95rem]">GEHU Bhimtal</p>
-            <p className="text-[10.5px] text-ink-faint tracking-wide uppercase -mt-0.5">
-              Complaint Registry
-            </p>
-          </div>
+      <nav aria-label="Main" className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-3">
+        <Link to={user ? roleHome(user.role) : '/'} className="flex items-center gap-2.5 group shrink-0" aria-label="GEHU Complaint Registry home">
+          <img src="/icons/icon.svg" alt="" className="h-9 w-9 rounded-lg shadow-card transition-transform group-hover:scale-105" />
+          <span className="leading-tight">
+            <span className="block font-display font-semibold text-ink text-[0.95rem]">GEHU Bhimtal</span>
+            <span className="block text-[11px] text-ink-faint -mt-0.5">Complaint Registry</span>
+          </span>
         </Link>
 
-        {user?.role === 'admin' && (
-          <div className="hidden sm:flex items-center gap-1 ml-6 mr-auto">
-            {[
-              ['/admin', 'Overview', true],
-              ['/admin/complaints', 'Complaints', false],
-              ['/admin/staff', 'Staff', false]
-            ].map(([to, label, end]) => (
+        {links.length > 0 && (
+          <div className="hidden md:flex items-center gap-1 ml-4 mr-auto">
+            {links.map(([to, label, end]) => (
               <NavLink
                 key={to}
                 to={to}
                 end={end}
                 className={({ isActive }) =>
-                  `px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-150 ${
-                    isActive ? 'bg-pine-50 text-pine-600 shadow-[inset_0_0_0_1px_rgba(32,75,59,0.08)]' : 'text-ink-soft hover:bg-stone-100'
+                  `px-3 min-h-[40px] inline-flex items-center rounded-md text-sm font-medium transition-colors ${
+                    isActive ? 'bg-pine-50 text-pine-600' : 'text-ink-soft hover:bg-stone-100'
                   }`
                 }
               >
@@ -56,21 +56,13 @@ export default function Navbar() {
           </div>
         )}
 
-        {user && (
-          <div className="flex items-center gap-2 sm:gap-3">
-            {user.role === 'student' && <PresenceBadge />}
-            <NotificationBell />
-            <div className="w-px h-6 bg-stone-300 mx-1 hidden sm:block" />
-            <div className="text-right hidden sm:block">
-              <p className="text-sm font-medium text-ink leading-tight">{user.name}</p>
-              <p className="text-xs text-ink-faint capitalize leading-tight">{user.role}</p>
-            </div>
-            <button onClick={handleLogout} className="btn-secondary !py-1.5">
-              Logout
-            </button>
-          </div>
-        )}
-      </div>
-    </nav>
+        <div className="flex items-center gap-1 sm:gap-2 ml-auto">
+          {user?.role === 'student' && <PresenceBadge />}
+          {!user && <ThemeToggle />}
+          {user && <NotificationBell />}
+          {user && <UserMenu />}
+        </div>
+      </nav>
+    </header>
   )
 }
