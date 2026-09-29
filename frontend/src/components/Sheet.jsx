@@ -10,12 +10,18 @@ const FOCUSABLE = 'a[href],button:not([disabled]),textarea,input,select,[tabinde
 export default function Sheet({ open, onClose, title, children, footer, size = 'md' }) {
   const panelRef = useRef(null)
   const lastFocus = useRef(null)
+  // onClose is usually a fresh inline arrow function on every parent render
+  // (e.g. onClose={() => setAdding(false)}). Reading it through a ref means
+  // the setup effect below only reruns when the sheet actually opens/closes,
+  // not on every keystroke a form field inside it makes.
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
 
   useEffect(() => {
     if (!open) return
     lastFocus.current = document.activeElement
     const onKey = (e) => {
-      if (e.key === 'Escape') return onClose()
+      if (e.key === 'Escape') return onCloseRef.current()
       if (e.key !== 'Tab') return
       const nodes = panelRef.current?.querySelectorAll(FOCUSABLE)
       if (!nodes?.length) return
@@ -43,7 +49,8 @@ export default function Sheet({ open, onClose, title, children, footer, size = '
       document.body.style.overflow = prev
       lastFocus.current?.focus?.({ preventScroll: true })
     }
-  }, [open, onClose])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
 
   if (!open) return null
 
