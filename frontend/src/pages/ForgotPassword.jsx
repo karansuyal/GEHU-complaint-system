@@ -25,8 +25,9 @@ export default function ForgotPassword() {
       toast.success('If that email is registered, a code is on its way.')
       setStep('reset')
       startCooldown(60)
-    } catch {
-      toast.error('Something went wrong. Please try again.')
+    } catch (err) {
+      const d = err.response?.data?.detail
+      toast.error(typeof d === 'string' ? d : 'Something went wrong. Please try again.')
     } finally {
       setLoading(false)
     }

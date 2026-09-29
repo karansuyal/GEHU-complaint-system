@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
 from app.core.config import settings
+from app.core.ratelimit import ip_limit, key_limit
 from app.core.security import create_access_token, hash_password, verify_password
 from app.crud import user as user_crud
 from app.db.database import get_db
@@ -53,9 +54,10 @@ def _check_domain(email: str) -> None:
         raise HTTPException(status_code=400, detail=f"Please use your college email ({pretty})")
 
 
-@router.post("/register", response_model=RegisterResponse)
+@router.post("/register", response_model=RegisterResponse, dependencies=[Depends(ip_limit("register", 10, 3600))])
 def register(payload: RegisterRequest, background: BackgroundTasks, db: Session = Depends(get_db)):
     _check_domain(payload.email)
+    key_limit("register", payload.email, 5, 3600)
 
     # Public self-registration is only allowed as a student. Warden/admin
     # accounts must be created by an existing admin (see /auth/create-staff),
@@ -95,8 +97,9 @@ def register(payload: RegisterRequest, background: BackgroundTasks, db: Session 
     return RegisterResponse(requires_verification=True, email=user.email)
 
 
-@router.post("/verify-email", response_model=TokenResponse)
+@router.post("/verify-email", response_model=TokenResponse, dependencies=[Depends(ip_limit("verify", 30, 900))])
 def verify_email(payload: VerifyEmailRequest, background: BackgroundTasks, db: Session = Depends(get_db)):
+    key_limit("verify", payload.email, 10, 900)
     user = user_crud.get_user_by_email(db, payload.email)
     try:
         if not user:
@@ -113,8 +116,9 @@ def verify_email(payload: VerifyEmailRequest, background: BackgroundTasks, db: S
     return _token_for(user)
 
 
-@router.post("/resend-otp", response_model=MessageResponse)
+@router.post("/resend-otp", response_model=MessageResponse, dependencies=[Depends(ip_limit("otp-mail", 15, 900))])
 def resend_otp(payload: EmailOnlyRequest, background: BackgroundTasks, db: Session = Depends(get_db)):
+    key_limit("otp-mail", payload.email, 5, 900)
     user = user_crud.get_user_by_email(db, payload.email)
     if user and not user.is_verified:
         _issue_code(db, background, user.email, PURPOSE_VERIFY)
@@ -123,16 +127,18 @@ def resend_otp(payload: EmailOnlyRequest, background: BackgroundTasks, db: Sessi
     return MessageResponse(message="If that account needs verification, a new code has been sent.")
 
 
-@router.post("/forgot-password", response_model=MessageResponse)
+@router.post("/forgot-password", response_model=MessageResponse, dependencies=[Depends(ip_limit("otp-mail", 15, 900))])
 def forgot_password(payload: EmailOnlyRequest, background: BackgroundTasks, db: Session = Depends(get_db)):
+    key_limit("otp-mail", payload.email, 5, 900)
     user = user_crud.get_user_by_email(db, payload.email)
     if user and user.is_active:
         _issue_code(db, background, user.email, PURPOSE_RESET)
     return MessageResponse(message="If that email is registered, a reset code has been sent.")
 
 
-@router.post("/reset-password", response_model=MessageResponse)
+@router.post("/reset-password", response_model=MessageResponse, dependencies=[Depends(ip_limit("reset", 30, 900))])
 def reset_password(payload: ResetPasswordRequest, background: BackgroundTasks, db: Session = Depends(get_db)):
+    key_limit("reset", payload.email, 10, 900)
     user = user_crud.get_user_by_email(db, payload.email)
     try:
         if not user or not user.is_active:
@@ -150,8 +156,9 @@ def reset_password(payload: ResetPasswordRequest, background: BackgroundTasks, d
     return MessageResponse(message="Password updated. You can sign in now.")
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post("/login", response_model=TokenResponse, dependencies=[Depends(ip_limit("login", 30, 300))])
 def login(payload: LoginRequest, background: BackgroundTasks, db: Session = Depends(get_db)):
+    key_limit("login", payload.email, 10, 900)
     user = user_crud.get_user_by_email(db, payload.email)
     if not user or not verify_password(payload.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Incorrect email or password")

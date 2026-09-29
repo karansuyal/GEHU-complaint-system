@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
@@ -64,7 +64,7 @@ def category_breakdown(
 
 @router.get("/trend")
 def daily_trend(
-    days: int = 14,
+    days: int = Query(14, ge=1, le=90),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_roles(UserRole.admin)),
 ):

@@ -26,15 +26,18 @@ router = APIRouter(prefix="/complaints", tags=["complaints"])
 @router.post("", response_model=ComplaintOut)
 async def file_complaint(
     category: ComplaintCategory = Form(...),
-    title: str = Form(...),
-    description: str = Form(...),
-    location: str = Form(...),
+    title: str = Form(..., max_length=150),
+    description: str = Form(..., max_length=2000),
+    location: str = Form(..., max_length=150),
     is_anonymous: bool = Form(False),
     photo: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_roles(UserRole.student)),
 ):
-    photo_url = await upload_photo(photo) if photo else None
+    title, description, location = title.strip(), description.strip(), location.strip()
+    if not (title and description and location):
+        raise HTTPException(status_code=422, detail="Title, description and location cannot be empty")
+    photo_url = await upload_photo(photo)
     complaint = complaint_crud.create_complaint(
         db,
         student=current_user,
@@ -67,7 +70,7 @@ def assigned_complaints(
 
 @router.get("", response_model=list[ComplaintOut])
 def all_complaints(
-    limit: int = 50,
+    limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_roles(UserRole.admin)),
 ):
@@ -144,7 +147,10 @@ def change_status(
     current_user: User = Depends(require_roles(UserRole.warden, UserRole.admin)),
 ):
     complaint = _get_visible_complaint(db, complaint_id, current_user)
-    return complaint_crud.update_status(db, complaint, payload.status, current_user)
+    try:
+        return complaint_crud.update_status(db, complaint, payload.status, current_user)
+    except complaint_crud.InvalidTransition as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.post("/{complaint_id}/comments", response_model=ComplaintOut)

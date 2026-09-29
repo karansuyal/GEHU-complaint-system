@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional, List
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.models.complaint import ComplaintStatus
 from app.models.user import ComplaintCategory
@@ -83,7 +83,15 @@ class ComplaintStatusUpdate(BaseModel):
 
 
 class CommentCreate(BaseModel):
-    text: str
+    text: str = Field(min_length=1, max_length=1000)
+
+    @field_validator("text")
+    @classmethod
+    def _not_blank(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("Comment cannot be empty")
+        return v
 
 
 class FeedbackCreate(BaseModel):

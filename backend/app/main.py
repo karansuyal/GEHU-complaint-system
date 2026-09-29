@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -12,19 +13,28 @@ from app.services.escalation import run_escalation_check
 # Import models so SQLAlchemy sees them before create_all
 from app import models  # noqa: F401
 
+logger = logging.getLogger(__name__)
 scheduler = BackgroundScheduler()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Refuse to boot a production deployment with an insecure config.
+    settings.assert_safe_for_startup()
     # Schema is managed by Alembic (see alembic/versions). Also adopts old
     # create_all() databases automatically.
     run_migrations()
     # Check for SLA-breached complaints every 15 minutes.
-    scheduler.add_job(run_escalation_check, "interval", minutes=15, id="escalation_check")
-    scheduler.start()
+    if settings.RUN_SCHEDULER:
+        scheduler.add_job(
+            run_escalation_check, "interval", minutes=15, id="escalation_check", replace_existing=True
+        )
+        scheduler.start()
+    else:
+        logger.info("RUN_SCHEDULER=false: escalation scheduler not started in this process")
     yield
-    scheduler.shutdown()
+    if scheduler.running:
+        scheduler.shutdown()
 
 
 app = FastAPI(title="GEHU Bhimtal Complaint Portal API", version="1.0.0", lifespan=lifespan)

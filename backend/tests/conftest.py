@@ -7,6 +7,8 @@ from pathlib import Path
 _tmp = tempfile.mkdtemp()
 os.environ["DATABASE_URL"] = f"sqlite:///{_tmp}/test.db"
 os.environ["OTP_RESEND_COOLDOWN_SECONDS"] = "0"
+os.environ["RATE_LIMIT_ENABLED"] = "false"  # tests re-enable it explicitly where needed
+os.environ["ENVIRONMENT"] = "development"
 os.environ["ALLOWED_EMAIL_DOMAINS"] = ""
 os.environ["SMTP_HOST"] = ""
 os.environ["BREVO_API_KEY"] = ""

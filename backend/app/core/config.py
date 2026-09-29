@@ -1,13 +1,27 @@
+import logging
 import re
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+logger = logging.getLogger(__name__)
+
+# Keys that must never be used outside local development.
+_INSECURE_SECRET_KEYS = {"dev-secret-change-me", "changeme", "secret", "change-me", ""}
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
+    # "production" | "development" | "auto". With "auto" (default) the app counts
+    # as production whenever DATABASE_URL is not SQLite (i.e. you deployed with
+    # Postgres), so a forgotten SECRET_KEY on a real deployment is caught.
+    ENVIRONMENT: str = "auto"
+
     DATABASE_URL: str = "sqlite:///./complaints.db"
 
+    # MUST be overridden in production (min 32 chars). Generate one with:
+    #   python -c "import secrets; print(secrets.token_urlsafe(48))"
     SECRET_KEY: str = "dev-secret-change-me"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
@@ -75,6 +89,46 @@ class Settings(BaseSettings):
 
     # How long after a complaint is marked resolved the student can reopen it.
     REOPEN_WINDOW_DAYS: int = 7
+
+    # ---- Photo uploads ----
+    MAX_UPLOAD_MB: int = 8
+
+    # ---- Rate limiting (in-memory, per process) ----
+    RATE_LIMIT_ENABLED: bool = True
+    # Set True ONLY when the app runs behind a reverse proxy you control
+    # (Render, Railway, Nginx...). Then the real client IP is read from
+    # X-Forwarded-For. If it is False behind a proxy, every user appears to
+    # come from the proxy's IP; if it is True while directly exposed, clients
+    # could spoof their IP.
+    TRUST_PROXY_HEADERS: bool = False
+
+    # Run the SLA-escalation scheduler in this process. With several
+    # workers/instances set it to False on all but one. (Escalation itself is
+    # atomic, so an accidental duplicate can't double-escalate or double-notify.)
+    RUN_SCHEDULER: bool = True
+
+    @property
+    def is_production(self) -> bool:
+        env = self.ENVIRONMENT.strip().lower()
+        if env in ("production", "prod"):
+            return True
+        if env in ("development", "dev", "local", "test"):
+            return False
+        return not self.DATABASE_URL.startswith("sqlite")
+
+    def assert_safe_for_startup(self) -> None:
+        """Refuses to start a production deployment with an insecure config."""
+        weak = self.SECRET_KEY.strip().lower() in _INSECURE_SECRET_KEYS or len(self.SECRET_KEY) < 32
+        if self.is_production and weak:
+            raise RuntimeError(
+                "Refusing to start: SECRET_KEY is missing, default or shorter than 32 characters "
+                "while running in production. Set a strong SECRET_KEY in the environment. "
+                'Generate one with: python -c "import secrets; print(secrets.token_urlsafe(48))"'
+            )
+        if weak:
+            logger.warning("Using the development SECRET_KEY. Fine locally, never in production.")
+        if self.is_production and "localhost" in self.FRONTEND_ORIGIN:
+            logger.warning("FRONTEND_ORIGIN still points to localhost; the deployed frontend will be blocked by CORS.")
 
     @property
     def email_notify_types(self) -> set[str]:

@@ -52,21 +52,21 @@ export default function Register() {
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <Field label="Full name">
-          <input required autoComplete="name" autoCapitalize="words" enterKeyHint="next" className="input-field" value={form.name} onChange={set('name')} />
+          <input required maxLength={100} autoComplete="name" autoCapitalize="words" enterKeyHint="next" className="input-field" value={form.name} onChange={set('name')} />
         </Field>
         <Field label="College email">
           <input type="email" required autoComplete="email" inputMode="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} enterKeyHint="next" placeholder="you@gehu.ac.in" className="input-field" value={form.email} onChange={set('email')} />
         </Field>
         <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-4">
           <Field label="Enrollment no.">
-            <input required autoCapitalize="characters" autoCorrect="off" enterKeyHint="next" className="input-field" value={form.enrollment_no} onChange={set('enrollment_no')} />
+            <input required maxLength={30} autoCapitalize="characters" autoCorrect="off" enterKeyHint="next" className="input-field" value={form.enrollment_no} onChange={set('enrollment_no')} />
           </Field>
           <Field label="Hostel block">
-            <input placeholder="e.g. Block C" autoCapitalize="words" enterKeyHint="next" className="input-field" value={form.hostel_block} onChange={set('hostel_block')} />
+            <input maxLength={50} placeholder="e.g. Block C" autoCapitalize="words" enterKeyHint="next" className="input-field" value={form.hostel_block} onChange={set('hostel_block')} />
           </Field>
         </div>
         <Field label="Password" hint={form.password ? undefined : 'At least 8 characters.'}>
-          <PasswordInput required minLength={8} autoComplete="new-password" enterKeyHint="go" value={form.password} onChange={set('password')} />
+          <PasswordInput required minLength={8} maxLength={72} autoComplete="new-password" enterKeyHint="go" value={form.password} onChange={set('password')} />
         </Field>
         <StrengthMeter password={form.password} />
         <button type="submit" disabled={loading} className="btn-primary w-full !mt-6">

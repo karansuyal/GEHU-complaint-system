@@ -19,8 +19,7 @@ import Timeline from '../components/Timeline'
 import usePageTitle from '../hooks/usePageTitle'
 import { categoryLabel, roleHome } from '../utils/categories'
 import { daysLeft, formatDate, timeAgo } from '../utils/date'
-
-const STAFF_STATUSES = [['pending', 'Pending'], ['in_progress', 'In progress'], ['resolved', 'Resolved']]
+import { canChangeStatus, statusOptions } from '../utils/status'
 
 function errText(err, fallback) {
   const d = err.response?.data?.detail
@@ -194,11 +193,14 @@ export default function ComplaintDetail() {
                   <p className="field-label">Status</p>
                   <SegmentedControl
                     label="Status"
-                    disabled={busy}
+                    disabled={busy || !canChangeStatus(user.role, complaint.status)}
                     value={complaint.status === 'escalated' ? '' : complaint.status}
                     onChange={(v) => run(() => complaintsAPI.updateStatus(id, { status: v }), 'Status updated')}
-                    options={STAFF_STATUSES}
+                    options={statusOptions(user.role, complaint.status)}
                   />
+                  {complaint.status === 'resolved' && user.role !== 'admin' && (
+                    <p className="text-xs text-ink-faint mt-1.5">Resolved. Only the student can reopen this complaint.</p>
+                  )}
                   {complaint.status === 'escalated' && <p className="text-xs text-rust-600 mt-1.5">Escalated. Choose a new status to take it back.</p>}
                 </div>
                 {user.role === 'admin' && complaint.category !== 'ragging' && (

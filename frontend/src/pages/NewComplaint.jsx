@@ -11,6 +11,7 @@ import { CATEGORIES } from '../utils/categories'
 import { MAX_PHOTO_MB, compressImage, formatBytes } from '../utils/image'
 
 const DRAFT_KEY = 'gehu_complaint_draft'
+const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 const BLANK = { category: '', title: '', description: '', location: '', is_anonymous: false }
 
 const loadDraft = () => {
@@ -61,6 +62,7 @@ export default function NewComplaint() {
   const pickPhoto = async (file) => {
     if (!file) return
     if (!file.type.startsWith('image/')) return toast.error('Please choose an image file.')
+    if (!ALLOWED_PHOTO_TYPES.includes(file.type)) return toast.error('Please use a JPG, PNG, WEBP or GIF photo (HEIC is not supported).')
     if (file.size > MAX_PHOTO_MB * 1024 * 1024) return toast.error(`That photo is over ${MAX_PHOTO_MB} MB.`)
     const small = await compressImage(file)
     setPhoto(small)
@@ -165,7 +167,7 @@ export default function NewComplaint() {
         </Field>
 
         <Field label="Location">
-          <input required enterKeyHint="done" placeholder="e.g. Hostel Block C, Room 214" className="input-field" value={form.location} onChange={set('location')} />
+          <input required maxLength={150} enterKeyHint="done" placeholder="e.g. Hostel Block C, Room 214" className="input-field" value={form.location} onChange={set('location')} />
         </Field>
 
         <div>

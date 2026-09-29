@@ -16,6 +16,7 @@ import useDebounce from '../hooks/useDebounce'
 import usePageTitle from '../hooks/usePageTitle'
 import { categoryLabel } from '../utils/categories'
 import { formatDate } from '../utils/date'
+import { canChangeStatus, statusOptions } from '../utils/status'
 
 const STATUS_OPTIONS = [
   ['pending', 'Pending'],
@@ -64,8 +65,10 @@ export default function WardenDashboard() {
       toast.success('Status updated')
       load()
       loadTotals()
-    } catch {
-      toast.error('Failed to update status')
+    } catch (err) {
+      const d = err.response?.data?.detail
+      toast.error(typeof d === 'string' ? d : 'Failed to update status')
+      load()
     } finally {
       setUpdating(null)
     }
@@ -124,7 +127,7 @@ export default function WardenDashboard() {
                 <DueChip deadline={c.sla_deadline} />
                 <select
                   aria-label={`Change status of ${c.ticket_id}`}
-                  disabled={updating === c.id}
+                  disabled={updating === c.id || !canChangeStatus('warden', c.status)}
                   value={c.status === 'escalated' ? '' : c.status}
                   onChange={(e) => changeStatus(c.id, e.target.value)}
                   className="input-field !w-auto flex-1 md:flex-none md:!min-h-[36px] md:!py-1.5 min-w-[9.5rem]"
@@ -134,7 +137,7 @@ export default function WardenDashboard() {
                       Choose status…
                     </option>
                   )}
-                  {STATUS_OPTIONS.map(([v, l]) => (
+                  {statusOptions('warden', c.status).map(([v, l]) => (
                     <option key={v} value={v}>
                       {l}
                     </option>

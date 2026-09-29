@@ -1,7 +1,9 @@
 import math
 from datetime import date, datetime, timedelta, timezone
 
+from fastapi import HTTPException
 from sqlalchemy import or_
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.complaint import Complaint, ComplaintStatus, generate_ticket_id
@@ -48,21 +50,34 @@ def create_complaint(
         if warden:
             assigned_warden_id = warden.id
 
-    complaint = Complaint(
-        ticket_id=generate_ticket_id(),
-        student_id=student.id,
-        campus=student.campus,
-        category=category,
-        title=title,
-        description=description,
-        location=location,
-        photo_url=photo_url,
-        is_anonymous=force_anonymous,
-        status=ComplaintStatus.pending,
-        assigned_warden_id=assigned_warden_id,
-    )
-    db.add(complaint)
-    db.flush()
+    student_id, campus = student.id, student.campus
+    complaint = None
+    # ticket_id is UNIQUE. Collisions are astronomically unlikely with 8 random
+    # characters, but never surface one to the student as a 500: just retry.
+    for _attempt in range(5):
+        candidate = Complaint(
+            ticket_id=generate_ticket_id(),
+            student_id=student_id,
+            campus=campus,
+            category=category,
+            title=title,
+            description=description,
+            location=location,
+            photo_url=photo_url,
+            is_anonymous=force_anonymous,
+            status=ComplaintStatus.pending,
+            assigned_warden_id=assigned_warden_id,
+        )
+        db.add(candidate)
+        try:
+            db.flush()
+        except IntegrityError:
+            db.rollback()
+            continue
+        complaint = candidate
+        break
+    if complaint is None:
+        raise HTTPException(status_code=503, detail="Could not create a ticket number. Please try again.")
 
     db.add(
         StatusHistory(
@@ -152,7 +167,41 @@ def list_all_for_admin(db: Session, campus: str, limit: int = 50):
     )
 
 
+class InvalidTransition(ValueError):
+    """Raised when a status change is not allowed (route turns it into a 400)."""
+
+
+_S = ComplaintStatus
+# What a WARDEN may move a complaint to. `escalated` is set by the SLA job only,
+# and a resolved complaint can only come back through the student's "reopen".
+WARDEN_TRANSITIONS: dict[ComplaintStatus, set[ComplaintStatus]] = {
+    _S.pending: {_S.in_progress, _S.resolved},
+    _S.in_progress: {_S.pending, _S.resolved},
+    _S.escalated: {_S.pending, _S.in_progress, _S.resolved},
+    _S.resolved: set(),
+}
+# Admins can additionally escalate by hand and re-open a resolved complaint.
+ADMIN_TRANSITIONS: dict[ComplaintStatus, set[ComplaintStatus]] = {
+    _S.pending: WARDEN_TRANSITIONS[_S.pending] | {_S.escalated},
+    _S.in_progress: WARDEN_TRANSITIONS[_S.in_progress] | {_S.escalated},
+    _S.escalated: WARDEN_TRANSITIONS[_S.escalated],
+    _S.resolved: {_S.in_progress},
+}
+
+
+def allowed_transitions(role: UserRole, current: ComplaintStatus) -> set[ComplaintStatus]:
+    table = ADMIN_TRANSITIONS if role == UserRole.admin else WARDEN_TRANSITIONS
+    return table.get(current, set())
+
+
 def update_status(db: Session, complaint: Complaint, new_status: ComplaintStatus, changed_by: User):
+    if new_status == complaint.status:
+        raise InvalidTransition(f"The complaint is already {new_status.value.replace('_', ' ')}")
+    if new_status not in allowed_transitions(changed_by.role, complaint.status):
+        raise InvalidTransition(
+            f"Cannot change a complaint from {complaint.status.value.replace('_', ' ')} "
+            f"to {new_status.value.replace('_', ' ')}"
+        )
     was_resolved = complaint.status == ComplaintStatus.resolved
     complaint.status = new_status
     complaint.updated_at = datetime.now(timezone.utc)

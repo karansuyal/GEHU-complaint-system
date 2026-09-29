@@ -49,8 +49,9 @@ export default function VerifyEmail() {
       toast.success('New code sent.')
       startCooldown(60)
       setOtp('')
-    } catch {
-      toast.error('Could not resend the code.')
+    } catch (err) {
+      const d = err.response?.data?.detail
+      toast.error(typeof d === 'string' ? d : 'Could not resend the code.')
     }
   }
 

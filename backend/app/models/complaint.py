@@ -1,7 +1,6 @@
 import enum
 import uuid
-import random
-import string
+import secrets
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import Column, String, DateTime, Enum, Boolean, ForeignKey, Text, Integer, text
@@ -19,8 +18,14 @@ class ComplaintStatus(str, enum.Enum):
     escalated = "escalated"
 
 
+# No 0/O/1/I/L so a ticket read out over the phone can't be misheard.
+_TICKET_ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"
+
+
 def generate_ticket_id() -> str:
-    suffix = "".join(random.choices(string.digits, k=5))
+    """GEHU-XXXXXXXX: 8 chars from a 31-symbol alphabet (~8.5e11 combinations),
+    from a CSPRNG. Old 5-digit tickets (GEHU-12345) stay valid."""
+    suffix = "".join(secrets.choice(_TICKET_ALPHABET) for _ in range(8))
     return f"GEHU-{suffix}"
 
 

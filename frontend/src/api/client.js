@@ -1,7 +1,7 @@
 import axios from 'axios'
 
-// Base URL points to the FastAPI backend (to be built next).
-// Set VITE_API_URL in a .env file when deploying.
+// Base URL of the FastAPI backend.
+// Set VITE_API_URL (e.g. in Vercel/Netlify env settings) when deploying.
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
 
 const client = axios.create({
@@ -39,7 +39,7 @@ client.interceptors.response.use(
 export default client
 
 // ---- API endpoint helpers ----
-// These map 1:1 to the FastAPI routes we'll build in the backend phase.
+// These map 1:1 to the FastAPI routes under /api/v1.
 
 export const authAPI = {
   login: (data) => client.post('/auth/login', data),
