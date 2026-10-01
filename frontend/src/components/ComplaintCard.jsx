@@ -6,13 +6,16 @@ import Icon from './Icon'
 import { CATEGORY_BY_VALUE } from '../utils/categories'
 import { formatDate } from '../utils/date'
 
+const RAIL = { pending: 'rgb(var(--c-brass-500))', in_progress: 'rgb(var(--c-slate-500))', resolved: 'rgb(var(--c-pine-400))', escalated: 'rgb(var(--c-rust-500))' }
+
 export default function ComplaintCard({ complaint, showWarden = false, showDue = false }) {
   const { id, title, category, status, created_at, is_anonymous, ticket_id, reopened_count, rating, assigned_warden_name, sla_deadline } = complaint
   const meta = CATEGORY_BY_VALUE[category]
 
   return (
-    <Link to={`/complaints/${id}`} className="panel panel-hover w-full p-4 flex items-start gap-3.5 group">
-      <span className="h-10 w-10 rounded-md bg-stone-100 text-ink-soft flex items-center justify-center shrink-0 group-hover:bg-pine-50 group-hover:text-pine-600 transition-colors">
+    <Link to={`/complaints/${id}`} className="panel panel-hover status-rail w-full p-4 pl-5 flex items-start gap-3.5 group"
+      style={{ '--rail': RAIL[status] }}>
+      <span className="h-11 w-11 rounded-xl bg-stone-100 text-ink-soft flex items-center justify-center shrink-0 group-hover:bg-pine-50 group-hover:text-pine-600 transition-colors">
         <Icon name={meta?.icon || 'clipboard'} />
       </span>
 

@@ -43,8 +43,10 @@
   --btn-b-hover: 25 60 47;
   --skeleton-a: 241 239 233;
   --skeleton-b: 228 225 216;
-  --body-glow-a: rgba(32, 75, 59, 0.05);
-  --body-glow-b: rgba(184, 134, 46, 0.05);
+  --body-glow-a: rgba(32, 75, 59, 0.07);
+  --body-glow-b: rgba(184, 134, 46, 0.07);
+  --hero-a: #204B3B;
+  --hero-b: #132E24;
 }
 
 .dark {
@@ -84,8 +86,10 @@
   --btn-b-hover: 44 100 75;
   --skeleton-a: 27 37 32;
   --skeleton-b: 38 51 44;
-  --body-glow-a: rgba(74, 149, 118, 0.07);
-  --body-glow-b: rgba(214, 162, 74, 0.04);
+  --body-glow-a: rgba(74, 149, 118, 0.10);
+  --body-glow-b: rgba(214, 162, 74, 0.05);
+  --hero-a: #1E4A39;
+  --hero-b: #0F2219;
 }
 
 html {
@@ -95,7 +99,7 @@ html {
 }
 
 body {
-  font-family: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   background-color: rgb(var(--c-paper));
   background-image:
     radial-gradient(circle at 0% 0%, var(--body-glow-a) 0%, transparent 45%),
@@ -171,7 +175,7 @@ img { max-width: 100%; }
 /* ---------- Form controls ---------- */
 
 .input-field {
-  @apply w-full px-3.5 py-2.5 min-h-[44px] bg-surface border border-stone-300 rounded-md
+  @apply w-full px-3.5 py-2.5 min-h-[44px] bg-surface border border-stone-300 rounded-xl
     text-[0.925rem] text-ink placeholder:text-ink-faint
     focus:border-pine-400 focus:ring-4 focus:ring-pine-400/15 outline-none
     transition-[border-color,box-shadow] duration-150;
@@ -199,9 +203,9 @@ select.input-field {
 
 .btn-primary {
   @apply relative inline-flex items-center justify-center gap-1.5 min-h-[44px]
-    text-white font-medium px-5 py-2.5 rounded-md text-sm select-none
+    text-white font-medium px-5 py-2.5 rounded-xl text-sm select-none
     transition-[transform,box-shadow,background] duration-150
-    active:translate-y-px
+    active:scale-[0.97]
     disabled:opacity-50 disabled:pointer-events-none;
   background-image: linear-gradient(to bottom, rgb(var(--btn-a)), rgb(var(--btn-b)));
   box-shadow: 0 1px 2px rgb(var(--shadow) / 0.12), 0 4px 10px -4px rgb(var(--btn-b) / 0.55);
@@ -213,18 +217,18 @@ select.input-field {
 .btn-secondary {
   @apply inline-flex items-center justify-center gap-1.5 min-h-[44px] bg-surface border border-stone-300
     hover:border-ink/25 hover:bg-stone-100 text-ink-soft font-medium px-4 py-2.5
-    rounded-md transition-colors duration-150 text-sm select-none active:translate-y-px
+    rounded-xl transition-colors duration-150 text-sm select-none active:scale-[0.97]
     disabled:opacity-50 disabled:pointer-events-none;
 }
 
 .btn-ghost {
   @apply inline-flex items-center justify-center gap-1.5 min-h-[44px] text-ink-soft hover:text-ink
-    hover:bg-stone-100 font-medium px-3 py-2 rounded-md transition-colors duration-150 text-sm;
+    hover:bg-stone-100 font-medium px-3 py-2 rounded-xl transition-colors duration-150 text-sm;
 }
 
 .btn-danger {
   @apply inline-flex items-center justify-center gap-1.5 min-h-[44px] bg-surface border border-rust-100
-    text-rust-600 hover:bg-rust-50 font-medium px-4 py-2.5 rounded-md text-sm transition-colors
+    text-rust-600 hover:bg-rust-50 font-medium px-4 py-2.5 rounded-xl text-sm transition-colors
     disabled:opacity-50 disabled:pointer-events-none;
 }
 
@@ -236,11 +240,11 @@ select.input-field {
 /* ---------- Surfaces ---------- */
 
 .panel {
-  @apply bg-surface rounded-lg border border-stone-300/80 shadow-card;
+  @apply bg-surface rounded-xl border border-stone-300/70 shadow-card;
 }
 .panel-hover {
   @apply transition-[transform,box-shadow,border-color] duration-200
-    hover:border-pine-400/60 hover:shadow-lifted md:hover:-translate-y-0.5;
+    hover:border-pine-400/50 hover:shadow-lifted active:scale-[0.99] md:hover:-translate-y-0.5;
 }
 .divider { @apply border-t border-stone-300/80; }
 
@@ -251,7 +255,7 @@ select.input-field {
 }
 
 .status-tag {
-  @apply inline-flex items-center gap-1.5 pl-2.5 pr-3 py-1 rounded-sm border text-xs font-medium whitespace-nowrap;
+  @apply inline-flex items-center gap-1.5 pl-2.5 pr-3 py-1 rounded-full border text-xs font-semibold whitespace-nowrap;
 }
 
 /* ---------- Scrollbars ---------- */
@@ -293,4 +297,79 @@ select.input-field {
 @media print {
   nav, .no-print { display: none !important; }
   body { background: #fff !important; }
+}
+
+
+/* ============================================================
+   Advanced UI layer
+   ============================================================ */
+
+/* Hero banner used at the top of every dashboard */
+.hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--hero-a) 0%, var(--hero-b) 100%);
+  box-shadow: 0 18px 40px -18px rgb(var(--shadow) / 0.55);
+}
+.hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(214,162,74,.35) 0%, transparent 42%),
+    radial-gradient(circle at 100% 100%, rgba(255,255,255,.14) 0%, transparent 45%);
+  pointer-events: none;
+}
+.hero::after {
+  content: '';
+  position: absolute; right: -40px; top: -40px; height: 160px; width: 160px;
+  border-radius: 9999px; border: 28px solid rgba(255,255,255,.06);
+  pointer-events: none;
+}
+.hero > * { position: relative; z-index: 1; }
+
+.glass {
+  background: rgb(var(--c-paper) / 0.78);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  backdrop-filter: saturate(180%) blur(16px);
+}
+.hero-chip {
+  background: rgba(255,255,255,.14);
+  border: 1px solid rgba(255,255,255,.18);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+}
+
+/* Icon bubble on stat tiles */
+.stat-icon {
+  height: 38px; width: 38px; border-radius: 12px;
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+
+/* Staggered entrance: set style={{ '--i': index }} on children */
+.stagger > * { animation: fade-up .45s cubic-bezier(.16,1,.3,1) both; animation-delay: calc(var(--i, 0) * 55ms); }
+
+/* Phone-first helpers */
+@layer utilities {
+  .pb-nav { padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)); }
+}
+.snap-row { display: flex; gap: .75rem; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
+.snap-row > * { scroll-snap-align: start; flex-shrink: 0; }
+
+/* Floating tab bar */
+.tabbar {
+  background: rgb(var(--c-surface) / 0.88);
+  -webkit-backdrop-filter: saturate(180%) blur(18px);
+  backdrop-filter: saturate(180%) blur(18px);
+  border: 1px solid rgb(var(--c-stone-300) / 0.7);
+}
+
+/* Progress ring animation */
+.ring-fg { transition: stroke-dashoffset .9s cubic-bezier(.16,1,.3,1); }
+
+/* Left accent bar on complaint rows, coloured by status */
+.status-rail { position: relative; }
+.status-rail::before {
+  content: ''; position: absolute; left: 0; top: 12px; bottom: 12px; width: 3px; border-radius: 0 4px 4px 0;
+  background: var(--rail, transparent);
 }

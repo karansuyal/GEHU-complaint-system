@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { complaintsAPI } from '../api/client'
 import { useAuth } from '../context/AuthContext'
@@ -26,9 +26,11 @@ export default function NewComplaint() {
   usePageTitle('File a complaint')
   const navigate = useNavigate()
   const { user } = useAuth()
+  const [params] = useSearchParams()
   const [form, setForm] = useState(() => {
     const d = loadDraft()
-    return { ...d, location: d.location || user?.hostel_block || '' }
+    const preset = CATEGORIES.some((c) => c.value === params.get('category')) ? params.get('category') : ''
+    return { ...d, category: preset || d.category, location: d.location || user?.hostel_block || '' }
   })
   const [photo, setPhoto] = useState(null)
   const [preview, setPreview] = useState(null)

@@ -21,24 +21,28 @@ export default {
       },
       fontFamily: {
         display: ['"Fraunces"', 'ui-serif', 'Georgia', 'serif'],
-        sans: ['"IBM Plex Sans"', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif']
+        sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif']
       },
       boxShadow: {
-        card: '0 1px 2px rgb(var(--shadow) / 0.06), 0 1px 1px rgb(var(--shadow) / 0.04)',
-        lifted: '0 16px 32px -12px rgb(var(--shadow) / 0.28)',
+        card: '0 1px 2px rgb(var(--shadow) / 0.05), 0 4px 14px -6px rgb(var(--shadow) / 0.10)',
+        lifted: '0 20px 40px -14px rgb(var(--shadow) / 0.30)',
+        nav: '0 -8px 30px -12px rgb(var(--shadow) / 0.25)',
         glow: '0 0 0 4px rgb(var(--c-pine-400) / 0.15)'
       },
-      borderRadius: { sm: '4px', DEFAULT: '6px', md: '6px', lg: '8px', xl: '12px' },
+      borderRadius: { sm: '6px', DEFAULT: '8px', md: '10px', lg: '14px', xl: '18px', '2xl': '24px' },
       minHeight: { dvh: '100dvh' },
       height: { dvh: '100dvh' },
       spacing: { 'safe-b': 'env(safe-area-inset-bottom, 0px)', 'safe-t': 'env(safe-area-inset-top, 0px)' },
       keyframes: {
         'sheet-up': { from: { transform: 'translateY(24px)', opacity: '0' }, to: { transform: 'translateY(0)', opacity: '1' } },
-        'fade-in': { from: { opacity: '0' }, to: { opacity: '1' } }
+        'fade-in': { from: { opacity: '0' }, to: { opacity: '1' } },
+        'pop': { '0%': { transform: 'scale(.92)', opacity: '0' }, '100%': { transform: 'scale(1)', opacity: '1' } },
+        'ring-fill': { from: { strokeDashoffset: 'var(--ring-len)' } }
       },
       animation: {
         'sheet-up': 'sheet-up 0.28s cubic-bezier(0.16, 1, 0.3, 1) both',
-        'fade-in': 'fade-in 0.2s ease-out both'
+        'fade-in': 'fade-in 0.2s ease-out both',
+        'pop': 'pop 0.25s cubic-bezier(0.16, 1, 0.3, 1) both'
       }
     }
   },

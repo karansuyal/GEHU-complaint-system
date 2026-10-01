@@ -16,7 +16,7 @@ const LINKS = {
     ['/admin/complaints', 'Complaints', false],
     ['/admin/staff', 'Staff', false]
   ],
-  warden: []
+  warden: [['/warden', 'Assigned queue', true]]
 }
 
 export default function Navbar() {
@@ -25,12 +25,12 @@ export default function Navbar() {
 
   return (
     <header
-      className="bg-paper/90 backdrop-blur-md border-b border-stone-300/80 sticky top-0 z-40 no-print"
+      className="glass border-b border-stone-300/60 sticky top-0 z-40 no-print"
       style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
     >
       <nav aria-label="Main" className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-3">
         <Link to={user ? roleHome(user.role) : '/'} className="flex items-center gap-2.5 group shrink-0" aria-label="GEHU Complaint Registry home">
-          <img src="/icons/icon.svg" alt="" className="h-9 w-9 rounded-lg shadow-card transition-transform group-hover:scale-105" />
+          <img src="/icons/icon.svg" alt="" className="h-9 w-9 rounded-xl shadow-card transition-transform group-hover:scale-105" />
           <span className="leading-tight">
             <span className="block font-display font-semibold text-ink text-[0.95rem]">GEHU Bhimtal</span>
             <span className="block text-[11px] text-ink-faint -mt-0.5">Complaint Registry</span>
@@ -46,7 +46,7 @@ export default function Navbar() {
                 end={end}
                 className={({ isActive }) =>
                   `px-3 min-h-[40px] inline-flex items-center rounded-md text-sm font-medium transition-colors ${
-                    isActive ? 'bg-pine-50 text-pine-600' : 'text-ink-soft hover:bg-stone-100'
+                    isActive ? 'bg-pine-100 text-pine-600' : 'text-ink-soft hover:bg-stone-100'
                   }`
                 }
               >

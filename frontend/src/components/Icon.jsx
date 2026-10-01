@@ -112,6 +112,30 @@ const PATHS = {
       <path d="M12 11v5M12 8v.3" />
     </>
   ),
+  grid: (
+    <>
+      <rect x="4" y="4" width="6.5" height="6.5" rx="1.5" />
+      <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5" />
+      <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5" />
+      <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5" />
+    </>
+  ),
+  bolt: <path d="M13 3 5 13.5h6L10 21l8-10.5h-6L13 3Z" />,
+  chart: <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />,
+  trendUp: <path d="m3 17 6-6 4 4 8-8M15 7h6v6" />,
+  star: <path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.9L12 3.5Z" />,
+  checkCircle: (
+    <>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="m8.5 12.3 2.4 2.4 4.6-4.9" />
+    </>
+  ),
+  userPlus: (
+    <>
+      <circle cx="10" cy="8.5" r="3.4" />
+      <path d="M3.5 20c0-3.6 3-5.5 6.5-5.5M18 9v6M15 12h6" />
+    </>
+  ),
   mail: (
     <>
       <rect x="3" y="5.5" width="18" height="13" rx="2" />

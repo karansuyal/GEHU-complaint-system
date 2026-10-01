@@ -44,7 +44,7 @@ const guard = (roles, el) => <ProtectedRoute roles={roles}>{el}</ProtectedRoute>
 export default function App() {
   const { user } = useAuth()
   const { resolved } = useTheme()
-  const hasTabBar = user?.role === 'student' || user?.role === 'admin'
+  const hasTabBar = ['student', 'warden', 'admin'].includes(user?.role)
 
   return (
     <div className="min-h-dvh bg-paper">
@@ -67,7 +67,7 @@ export default function App() {
       <Navbar />
       <OfflineBanner />
       {/* Bottom padding keeps content clear of the phone tab bar + home indicator. */}
-      <main id="main" className={hasTabBar ? 'pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-0' : 'pb-[env(safe-area-inset-bottom,0px)]'}>
+      <main id="main" className={hasTabBar ? 'pb-nav md:pb-0' : 'pb-[env(safe-area-inset-bottom,0px)]'}>
         <ErrorBoundary>
           <Suspense fallback={Fallback}>
             <Routes>

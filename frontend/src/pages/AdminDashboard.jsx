@@ -5,7 +5,10 @@ import { analyticsAPI, complaintsAPI } from '../api/client'
 import ComplaintCard from '../components/ComplaintCard'
 import EmptyState from '../components/EmptyState'
 import Icon from '../components/Icon'
-import PageHeader from '../components/PageHeader'
+import HeroBanner, { HeroButton } from '../components/HeroBanner'
+import ProgressRing from '../components/ProgressRing'
+import { useAuth } from '../context/AuthContext'
+import useGreeting from '../hooks/useGreeting'
 import { ListSkeleton, StatSkeletons } from '../components/Skeleton'
 import StatTile from '../components/StatTile'
 import { useTheme } from '../hooks/useTheme'
@@ -23,6 +26,8 @@ const shortDate = (s) => new Date(s).toLocaleDateString('en-IN', { day: 'numeric
 export default function AdminDashboard() {
   usePageTitle('Campus overview')
   const { resolved } = useTheme()
+  const { user } = useAuth()
+  const greeting = useGreeting()
   const C = CHART[resolved]
   const [stats, setStats] = useState(null)
   const [recent, setRecent] = useState([])
@@ -44,38 +49,42 @@ export default function AdminDashboard() {
       .finally(() => setLoading(false))
   }, [])
 
+  const filed14 = trend.reduce((a, d) => a + (d.filed || 0), 0)
+  const resolved14 = trend.reduce((a, d) => a + (d.resolved || 0), 0)
+  const closure = filed14 ? Math.min(100, (resolved14 / filed14) * 100) : 0
+  const filedSpark = trend.map((d) => d.filed || 0)
+  const resolvedSpark = trend.map((d) => d.resolved || 0)
   const cards = [
-    { label: 'Total complaints', value: stats?.total },
-    { label: 'Pending', value: stats?.pending },
-    { label: 'Escalated', value: stats?.escalated, tone: 'warn' },
-    { label: 'Unassigned', value: stats?.unassigned, tone: 'warn' },
-    { label: 'Resolved (30 days)', value: stats?.resolved_30d, tone: 'good' },
-    { label: 'Avg. resolution time', value: resolutionTime?.avg_hours != null ? `${resolutionTime.avg_hours}h` : null },
-    { label: 'Reopened', value: stats?.reopened },
-    { label: 'Avg. rating', value: stats?.avg_rating != null ? `${stats.avg_rating} / 5` : null }
+    { label: 'Total complaints', value: stats?.total, icon: 'clipboard', spark: filedSpark, hint: 'filed, last 14 days' },
+    { label: 'Pending', value: stats?.pending, icon: 'clock', tone: 'brass' },
+    { label: 'Escalated', value: stats?.escalated, tone: 'warn', icon: 'warning' },
+    { label: 'Unassigned', value: stats?.unassigned, tone: 'warn', icon: 'userPlus' },
+    { label: 'Resolved (30 days)', value: stats?.resolved_30d, tone: 'good', icon: 'checkCircle', spark: resolvedSpark },
+    { label: 'Avg. resolution', value: resolutionTime?.avg_hours ?? null, suffix: 'h', icon: 'bolt', tone: 'info' },
+    { label: 'Reopened', value: stats?.reopened, icon: 'refresh' },
+    { label: 'Avg. rating', value: stats?.avg_rating ?? null, suffix: ' / 5', icon: 'star', tone: 'brass' }
   ]
-  const tip = { fontSize: 12, borderRadius: 6, border: `1px solid ${C.tipBorder}`, background: C.tipBg, color: resolved === 'dark' ? '#E9EEEA' : '#17211D' }
+  const tip = { fontSize: 12, borderRadius: 10, border: `1px solid ${C.tipBorder}`, background: C.tipBg, color: resolved === 'dark' ? '#E9EEEA' : '#17211D' }
   const axis = { fontSize: 11, fill: C.tick }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
-      <PageHeader
-        title="Campus overview"
-        subtitle="GEHU Bhimtal Campus · all categories"
-        actions={
-          <>
-            <Link to="/admin/complaints" className="btn-secondary">
-              <Icon name="search" className="h-4 w-4" /> All complaints
-            </Link>
-            <Link to="/admin/staff" className="btn-secondary">
-              <Icon name="people" className="h-4 w-4" /> Staff
-            </Link>
-          </>
-        }
-      />
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
+      <HeroBanner
+        eyebrow={`${greeting} · GEHU Bhimtal`}
+        title={`Campus overview`}
+        subtitle={user?.name ? `Signed in as ${user.name}. Here is how the campus is doing.` : 'All categories at a glance.'}
+        aside={trend.length > 0 ? <ProgressRing value={closure} label="closed (14d)" size={92} /> : null}
+      >
+        <HeroButton as={Link} to="/admin/complaints" primary>
+          <Icon name="search" className="h-4 w-4" /> All complaints
+        </HeroButton>
+        <HeroButton as={Link} to="/admin/staff">
+          <Icon name="people" className="h-4 w-4" /> Staff
+        </HeroButton>
+      </HeroBanner>
 
       {stats?.escalated > 0 && (
-        <Link to="/admin/complaints?status=escalated" className="flex items-center gap-3 bg-rust-50 border border-rust-100 rounded-md p-3.5 text-sm text-rust-600 mb-6 hover:brightness-95">
+        <Link to="/admin/complaints?status=escalated" className="flex items-center gap-3 bg-rust-50 border border-rust-100 rounded-xl p-3.5 text-sm text-rust-600 mb-5 hover:brightness-95">
           <Icon name="warning" className="h-5 w-5 shrink-0" />
           <span className="flex-1">
             <strong>{stats.escalated}</strong> complaint{stats.escalated > 1 ? 's have' : ' has'} crossed the SLA and been auto-escalated. Review now.
@@ -84,8 +93,8 @@ export default function AdminDashboard() {
         </Link>
       )}
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
-        {loading ? <StatSkeletons count={8} /> : cards.map((c) => <StatTile key={c.label} label={c.label} value={c.value ?? '—'} tone={c.tone} />)}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8 stagger">
+        {loading ? <StatSkeletons count={8} /> : cards.map((c, i) => <div key={c.label} style={{ '--i': i }}><StatTile {...c} value={c.value ?? '—'} /></div>)}
       </div>
 
       <div className="grid lg:grid-cols-2 gap-4 mb-10">

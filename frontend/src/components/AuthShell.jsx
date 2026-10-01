@@ -41,7 +41,12 @@ export default function AuthShell({ headline, blurb, title, subtitle, children, 
         <p className="relative text-white/50 text-xs">Graphic Era Hill University · Bhimtal Campus</p>
       </aside>
 
-      <div className="flex items-start sm:items-center justify-center px-4 py-8 sm:py-12">
+      <div className="flex flex-col items-center justify-start sm:justify-center px-4 pt-4 pb-8 sm:py-12">
+        {/* Phones: compact brand banner (the big side panel is desktop-only). */}
+        <div className="hero lg:hidden w-full max-w-[26rem] p-5 mb-6 animate-fade-up">
+          <p className="font-display text-xl leading-snug">{headline}</p>
+          <p className="text-xs text-white/65 mt-2">Graphic Era Hill University · Bhimtal Campus</p>
+        </div>
         <div className="w-full max-w-[26rem] animate-fade-up">
           <h1 className="font-display text-display-md text-ink mb-1.5">{title}</h1>
           {subtitle && <p className="text-sm text-ink-faint mb-7 leading-relaxed">{subtitle}</p>}
